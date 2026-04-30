@@ -1,0 +1,133 @@
+indexes:
+  - symbol: NASDAQ
+    name: 纳斯达克综合指数
+    source: yfinance
+    source_symbol: "^IXIC"
+    market: US
+    currency: USD
+
+  - symbol: NASDAQ100
+    name: 纳斯达克100指数
+    source: yfinance
+    source_symbol: "^NDX"
+    market: US
+    currency: USD
+
+  - symbol: SP500
+    name: 标普500指数
+    source: yfinance
+    source_symbol: "^GSPC"
+    market: US
+    currency: USD
+
+  - symbol: DOW
+    name: 道琼斯工业平均指数
+    source: yfinance
+    source_symbol: "^DJI"
+    market: US
+    currency: USD
+
+  - symbol: RUSSELL2000
+    name: 罗素2000指数
+    source: yfinance
+    source_symbol: "^RUT"
+    market: US
+    currency: USD
+
+  - symbol: VIX
+    name: VIX波动率指数
+    source: yfinance
+    source_symbol: "^VIX"
+    market: US
+    currency: USD
+
+  - symbol: DXY
+    name: 美元指数
+    source: yfinance
+    source_symbol: "DX-Y.NYB"
+    market: FX
+    currency: USD
+
+  - symbol: GOLD
+    name: COMEX黄金期货
+    source: yfinance
+    source_symbol: "GC=F"
+    market: COMMODITY
+    currency: USD
+
+  - symbol: WTI
+    name: WTI原油期货
+    source: yfinance
+    source_symbol: "CL=F"
+    market: COMMODITY
+    currency: USD
+
+  - symbol: HSI
+    name: 恒生指数
+    source: yfinance
+    source_symbol: "^HSI"
+    market: HK
+    currency: HKD
+
+  - symbol: NIKKEI225
+    name: 日经225指数
+    source: yfinance
+    source_symbol: "^N225"
+    market: JP
+    currency: JPY
+
+  - symbol: DAX
+    name: 德国DAX指数
+    source: yfinance
+    source_symbol: "^GDAXI"
+    market: EU
+    currency: EUR
+
+  - symbol: FTSE100
+    name: 英国富时100指数
+    source: yfinance
+    source_symbol: "^FTSE"
+    market: UK
+    currency: GBP
+
+  - symbol: CSI300
+    name: 沪深300指数
+    source: tushare
+    source_symbol: "000300.SH"
+    market: CN
+    currency: CNY
+
+  - symbol: SSE
+    name: 上证指数
+    source: tushare
+    source_symbol: "000001.SH"
+    market: CN
+    currency: CNY
+
+  - symbol: CSI500
+    name: 中证500指数
+    source: tushare
+    source_symbol: "000905.SH"
+    market: CN
+    currency: CNY
+
+  - symbol: CSI1000
+    name: 中证1000指数
+    source: tushare
+    source_symbol: "000852.SH"
+    market: CN
+    currency: CNY
+
+  - symbol: CHINEXT
+    name: 创业板指
+    source: tushare
+    source_symbol: "399006.SZ"
+    market: CN
+    currency: CNY
+
+  - symbol: STAR50
+    name: 科创50指数
+    source: tushare
+    source_symbol: "000688.SH"
+    market: CN
+    currency: CNY

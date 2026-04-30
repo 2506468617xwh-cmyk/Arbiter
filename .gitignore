@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Local database
+*.db
+data/*.db
+data/**/*.db
+data/market/*.db
+
+# Generated reports / local outputs
+data/reports/*.md
+data/reports/*.txt
+data/reports/*.markdown
+
+# Streamlit local secrets
+.streamlit/secrets.toml
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+logs/
+tmp/
+temp/
+*.tmp

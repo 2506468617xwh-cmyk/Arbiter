@@ -1,0 +1,118 @@
+sources:
+  # =========================
+  # Global / US Market
+  # =========================
+  - id: fed_policy
+    name: Fed Policy
+    query: "Federal Reserve interest rates inflation Powell FOMC Treasury yields"
+    language: "en-US"
+    region: "US"
+    assets: ["NASDAQ", "SP500", "DXY", "VIX", "GOLD"]
+    max_items: 25
+
+  - id: us_inflation_jobs
+    name: US Inflation Jobs
+    query: "US CPI inflation jobs report payrolls unemployment bond yields"
+    language: "en-US"
+    region: "US"
+    assets: ["NASDAQ", "SP500", "DXY", "VIX", "GOLD"]
+    max_items: 25
+
+  - id: nasdaq_ai
+    name: Nasdaq AI
+    query: "Nasdaq AI stocks Nvidia Microsoft Apple earnings semiconductor"
+    language: "en-US"
+    region: "US"
+    assets: ["NASDAQ", "NASDAQ100", "SP500"]
+    max_items: 25
+
+  - id: sp500_market
+    name: S&P 500 Market
+    query: "S&P 500 stock market earnings valuation Wall Street"
+    language: "en-US"
+    region: "US"
+    assets: ["SP500", "NASDAQ", "VIX"]
+    max_items: 25
+
+  - id: gold_macro
+    name: Gold Macro
+    query: "gold prices US dollar Treasury yields geopolitical risk"
+    language: "en-US"
+    region: "US"
+    assets: ["GOLD", "DXY", "VIX"]
+    max_items: 20
+
+  - id: oil_macro
+    name: Oil Macro
+    query: "oil prices crude OPEC demand supply geopolitical risk"
+    language: "en-US"
+    region: "US"
+    assets: ["WTI", "SP500"]
+    max_items: 20
+
+  - id: dollar_fx
+    name: US Dollar
+    query: "US dollar index Treasury yields currency market Fed"
+    language: "en-US"
+    region: "US"
+    assets: ["DXY", "GOLD", "NASDAQ", "SP500"]
+    max_items: 20
+
+  # =========================
+  # China / A-share / HK
+  # =========================
+  - id: china_macro_zh
+    name: 中国宏观
+    query: "中国 宏观经济 PMI 社融 M2 CPI PPI 政策"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["CSI300", "SSE", "CSI500", "CSI1000", "CHINEXT", "HSI"]
+    max_items: 30
+
+  - id: china_policy_zh
+    name: 中国政策
+    query: "中国 政策 刺激 稳增长 货币政策 财政政策 A股"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["CSI300", "SSE", "CSI500", "CHINEXT", "STAR50"]
+    max_items: 30
+
+  - id: a_share_market_zh
+    name: A股市场
+    query: "A股 沪深300 上证指数 创业板 科创50 市场行情"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["CSI300", "SSE", "CSI500", "CSI1000", "CHINEXT", "STAR50"]
+    max_items: 30
+
+  - id: china_property_zh
+    name: 中国地产
+    query: "中国 房地产 地产政策 房企 销售 土地 信贷"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["CSI300", "SSE", "CSI500", "HSI"]
+    max_items: 25
+
+  - id: china_fx_zh
+    name: 人民币汇率
+    query: "人民币 汇率 美元 人民币中间价 离岸人民币"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["DXY", "CSI300", "SSE", "HSI"]
+    max_items: 25
+
+  - id: hongkong_market_zh
+    name: 港股市场
+    query: "港股 恒生指数 恒生科技 南向资金 香港市场"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["HSI", "CSI300", "SSE"]
+    max_items: 25
+
+  - id: china_ai_tech_zh
+    name: 中国科技与AI
+    query: "中国 AI 人工智能 算力 半导体 科技股"
+    language: "zh-CN"
+    region: "CN"
+    assets: ["CHINEXT", "STAR50", "CSI500", "CSI1000", "HSI"]
+    max_items: 25

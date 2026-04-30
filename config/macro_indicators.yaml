@@ -1,0 +1,172 @@
+US:
+  DGS10:
+    name: 美国10年期国债收益率
+    source: fred
+    category: rates
+    unit: "%"
+    frequency: daily
+    direction_note: 上行通常压制成长股估值，下行通常缓解估值压力
+    related_assets: [NASDAQ, NASDAQ100, SP500, GOLD, DXY, HSI]
+
+  DGS2:
+    name: 美国2年期国债收益率
+    source: fred
+    category: rates
+    unit: "%"
+    frequency: daily
+    direction_note: 对政策利率预期更敏感，上行通常代表市场定价更鹰
+    related_assets: [NASDAQ, NASDAQ100, SP500, GOLD, DXY]
+
+  T10Y2Y:
+    name: 美国10年-2年国债期限利差
+    source: fred
+    category: rates
+    unit: "%"
+    frequency: daily
+    direction_note: 倒挂加深通常反映衰退或紧缩预期，修复可能反映周期预期变化
+    related_assets: [SP500, NASDAQ, DXY, GOLD]
+
+  FEDFUNDS:
+    name: 美国联邦基金有效利率
+    source: fred
+    category: policy_rate
+    unit: "%"
+    frequency: monthly
+    direction_note: 反映美联储政策利率环境
+    related_assets: [NASDAQ, NASDAQ100, SP500, GOLD, DXY]
+
+  CPIAUCSL:
+    name: 美国CPI
+    source: fred
+    category: inflation
+    unit: index
+    frequency: monthly
+    direction_note: 通胀上行可能推升紧缩预期，压制风险资产估值
+    related_assets: [NASDAQ, NASDAQ100, SP500, GOLD, DXY]
+
+  CPILFESL:
+    name: 美国核心CPI
+    source: fred
+    category: inflation
+    unit: index
+    frequency: monthly
+    direction_note: 核心通胀粘性越强，降息预期越容易受压
+    related_assets: [NASDAQ, NASDAQ100, SP500, GOLD, DXY]
+
+  PCEPI:
+    name: 美国PCE物价指数
+    source: fred
+    category: inflation
+    unit: index
+    frequency: monthly
+    direction_note: 美联储重点关注的通胀口径之一
+    related_assets: [NASDAQ, SP500, GOLD, DXY]
+
+  PCEPILFE:
+    name: 美国核心PCE物价指数
+    source: fred
+    category: inflation
+    unit: index
+    frequency: monthly
+    direction_note: 核心PCE粘性越强，越不利于宽松交易
+    related_assets: [NASDAQ, SP500, GOLD, DXY]
+
+  UNRATE:
+    name: 美国失业率
+    source: fred
+    category: employment
+    unit: "%"
+    frequency: monthly
+    direction_note: 失业率过快上行通常意味着增长压力，但也可能强化降息预期
+    related_assets: [SP500, NASDAQ, GOLD, DXY]
+
+  PAYEMS:
+    name: 美国非农就业人数
+    source: fred
+    category: employment
+    unit: thousand persons
+    frequency: monthly
+    direction_note: 就业强弱影响增长预期和美联储政策路径
+    related_assets: [SP500, NASDAQ, DXY, GOLD]
+
+  M2SL:
+    name: 美国M2货币存量
+    source: fred
+    category: liquidity
+    unit: billions of dollars
+    frequency: monthly
+    direction_note: 流动性扩张通常有利于风险资产，收缩则相反
+    related_assets: [NASDAQ, SP500, GOLD]
+
+  VIXCLS:
+    name: VIX恐慌指数
+    source: fred
+    category: risk_appetite
+    unit: index
+    frequency: daily
+    direction_note: VIX上行代表风险偏好下降，通常压制权益资产
+    related_assets: [NASDAQ, SP500, CSI300, HSI, GOLD]
+
+CN:
+  CN_CPI:
+    name: 中国CPI
+    source: tushare
+    category: inflation
+    unit: "%"
+    frequency: monthly
+    direction_note: 温和通胀配合增长修复通常更友好，通缩或弱通胀可能反映需求不足
+    related_assets: [CSI300, SSE, CSI500, CSI1000, CHINEXT, STAR50, HSI]
+
+  CN_PPI:
+    name: 中国PPI
+    source: tushare
+    category: inflation
+    unit: "%"
+    frequency: monthly
+    direction_note: PPI回升通常有利于顺周期盈利修复，持续低迷可能反映工业需求不足
+    related_assets: [CSI300, SSE, CSI500, HSI]
+
+  CN_PMI:
+    name: 中国制造业PMI
+    source: tushare
+    category: growth
+    unit: index
+    frequency: monthly
+    direction_note: PMI高于50通常代表制造业扩张，低于50代表收缩
+    related_assets: [CSI300, SSE, CSI500, CSI1000, CHINEXT, HSI]
+
+  CN_M2:
+    name: 中国M2同比
+    source: tushare
+    category: liquidity
+    unit: "%"
+    frequency: monthly
+    direction_note: M2回升通常代表货币环境改善，但需要结合社融和实体需求判断
+    related_assets: [CSI300, SSE, CSI500, HSI]
+
+  CN_SOCIAL_FINANCING:
+    name: 中国社会融资规模
+    source: tushare
+    category: liquidity
+    unit: 亿元
+    frequency: monthly
+    direction_note: 社融改善通常有利于信用扩张和经济预期修复
+    related_assets: [CSI300, SSE, CSI500, HSI]
+
+  CN_LPR_1Y:
+    name: 中国1年期LPR
+    source: tushare
+    category: policy_rate
+    unit: "%"
+    frequency: monthly
+    direction_note: LPR下调通常代表政策稳增长意图增强
+    related_assets: [CSI300, SSE, CSI500, HSI]
+
+  CN_LPR_5Y:
+    name: 中国5年期LPR
+    source: tushare
+    category: policy_rate
+    unit: "%"
+    frequency: monthly
+    direction_note: 5年期LPR更影响地产和中长期融资成本
+    related_assets: [CSI300, SSE, HSI]

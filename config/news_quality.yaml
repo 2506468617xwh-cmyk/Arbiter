@@ -1,0 +1,72 @@
+source_quality:
+  # Global top-tier
+  reuters: 100
+  bloomberg: 100
+  associated press: 95
+  ap news: 95
+  financial times: 95
+  wall street journal: 95
+  wsj: 95
+  cnbc: 88
+  marketwatch: 82
+  barron's: 82
+  yahoo finance: 76
+  investing.com: 72
+  seeking alpha: 66
+
+  # Official / institutions
+  federal reserve: 100
+  sec: 95
+  u.s. bureau of labor statistics: 95
+  bureau of economic analysis: 95
+  people's bank of china: 100
+  pbc: 100
+  national bureau of statistics: 95
+  国家统计局: 95
+  中国人民银行: 100
+  证监会: 95
+  财政部: 95
+  央行: 95
+
+  # China high-quality financial media
+  财新: 92
+  caixin: 92
+  第一财经: 88
+  yicai: 88
+  证券时报: 86
+  中国证券报: 86
+  上海证券报: 86
+  证券日报: 82
+  经济观察报: 82
+  21世纪经济报道: 82
+  21jingji: 82
+  界面新闻: 76
+  澎湃新闻: 74
+  财联社: 78
+  eastmoney: 74
+  东方财富: 74
+  新浪财经: 70
+  36氪: 68
+  央视新闻: 88
+  新华社: 92
+  人民日报: 86
+
+default_source_score: 55
+
+event_type_weights:
+  货币政策: 15
+  通胀数据: 15
+  就业数据: 12
+  美债利率: 15
+  AI科技: 12
+  公司财报: 10
+  中国政策: 15
+  中国宏观: 14
+  A股市场: 10
+  中国地产: 12
+  人民币汇率: 12
+  港股市场: 9
+  大宗商品: 10
+  地缘风险: 12
+  市场情绪: 8
+  其他: 0
