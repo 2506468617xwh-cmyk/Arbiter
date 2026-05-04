@@ -116,3 +116,25 @@ sources:
     region: "CN"
     assets: ["CHINEXT", "STAR50", "CSI500", "CSI1000", "HSI"]
     max_items: 25
+
+rsshub:
+  enabled: true
+  base_urls:
+    - "https://rsshub.app"
+  routes:
+    - name: "eastmoney_strategy_report"
+      path: "/eastmoney/report/strategyreport"
+      market: "CN"
+      topics: ["strategy", "report"]
+    - name: "eastmoney_macro_report"
+      path: "/eastmoney/report/macresearch"
+      market: "CN"
+      topics: ["macro", "report"]
+    - name: "eastmoney_broker_report"
+      path: "/eastmoney/report/brokerreport"
+      market: "CN"
+      topics: ["broker", "morning_note"]
+    - name: "jin10"
+      path: "/jin10"
+      market: "GLOBAL"
+      topics: ["macro", "commodity", "forex"]

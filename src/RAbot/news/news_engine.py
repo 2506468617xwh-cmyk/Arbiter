@@ -1,33 +1,18 @@
 from __future__ import annotations
 
-import re
+from datetime import datetime
 
 import pandas as pd
 
-
-BULLISH_WORDS = [
-    "rally", "rebounds", "rebound", "surges", "jumps", "gains", "beats", "strong",
-    "optimism", "stimulus", "easing", "cut", "cuts", "dovish", "growth",
-    "record high", "soft landing",
-    "降息", "刺激", "反弹", "上涨", "增长", "利好", "回暖", "改善", "超预期"
-]
-
-BEARISH_WORDS = [
-    "falls", "fall", "drops", "drop", "selloff", "sell-off", "slumps", "weak",
-    "misses", "inflation", "higher yields", "yields rise", "hawkish", "recession",
-    "risk", "warning", "crackdown", "tariff", "sanctions",
-    "下跌", "回落", "通胀", "衰退", "风险", "利空", "制裁", "关税", "低迷", "不及预期"
-]
-
-IMPORTANT_WORDS = [
-    "fed", "federal reserve", "fomc", "powell", "cpi", "inflation", "jobs",
-    "payrolls", "treasury", "yields", "earnings", "nvidia", "microsoft", "apple",
-    "ai", "china", "stimulus", "pmi", "oil", "gold", "dollar", "recession",
-    "geopolitical",
-    "美联储", "鲍威尔", "通胀", "非农", "美债", "收益率", "英伟达", "微软",
-    "苹果", "人工智能", "中国", "政策", "刺激", "PMI", "原油", "黄金", "美元",
-    "人民币", "地产", "A股", "沪深300", "上证指数", "港股", "恒生"
-]
+from RAbot.news.news_dedup import deduplicate_news as deduplicate_news_items
+from RAbot.news.news_models import NewsItem
+from RAbot.news.news_quality import (
+    calculate_importance_score,
+    infer_sentiment,
+    score_news_items,
+)
+from RAbot.news.news_store import NewsResearchStore
+from RAbot.settings import get_project_dir
 
 ASSET_KEYWORDS = {
     "NASDAQ": ["nasdaq", "technology stocks", "tech stocks", "ai stocks", "纳斯达克", "科技股"],
@@ -53,21 +38,6 @@ def _normalize_text(text: str | None) -> str:
     return (text or "").lower().strip()
 
 
-def infer_sentiment(title: str, summary: str | None = None) -> str:
-    text = _normalize_text(f"{title} {summary or ''}")
-
-    bullish = sum(1 for word in BULLISH_WORDS if word.lower() in text)
-    bearish = sum(1 for word in BEARISH_WORDS if word.lower() in text)
-
-    if bullish > bearish:
-        return "偏利多"
-
-    if bearish > bullish:
-        return "偏利空"
-
-    return "中性"
-
-
 def infer_related_assets(title: str, summary: str | None = None, default_assets: list[str] | None = None) -> list[str]:
     text = _normalize_text(f"{title} {summary or ''}")
 
@@ -79,31 +49,6 @@ def infer_related_assets(title: str, summary: str | None = None, default_assets:
                 assets.add(asset)
 
     return sorted(assets)
-
-
-def calculate_importance_score(title: str, summary: str | None = None, related_assets: list[str] | None = None) -> int:
-    text = _normalize_text(f"{title} {summary or ''}")
-
-    score = 20
-
-    for word in IMPORTANT_WORDS:
-        if word.lower() in text:
-            score += 8
-
-    if related_assets:
-        score += min(25, len(related_assets) * 5)
-
-    if re.search(
-        r"\b(cpi|fomc|fed|powell|nvidia|earnings|stimulus|treasury|yields|inflation|pmi)\b",
-        text,
-    ):
-        score += 15
-
-    for zh_key in ["美联储", "通胀", "非农", "美债", "收益率", "政策", "刺激", "地产", "人民币", "A股", "港股"]:
-        if zh_key.lower() in text:
-            score += 10
-
-    return max(0, min(100, score))
 
 
 def build_news_interpretation(
@@ -169,3 +114,84 @@ def enrich_news_dataframe(df: pd.DataFrame, default_assets: list[str] | None = N
     data["importance_score"] = importance_list
 
     return data
+
+
+def _init_multi_source_providers():
+    from RAbot.news.akshare_news_provider import AKShareNewsProvider
+    from RAbot.news.alphavantage_news_provider import AlphaVantageNewsProvider
+    from RAbot.news.finnhub_news_provider import FinnhubNewsProvider
+    from RAbot.news.newsapi_provider import NewsAPIProvider
+    from RAbot.news.rsshub_news_provider import RSSHubNewsProvider
+
+    return [
+        AKShareNewsProvider(),
+        RSSHubNewsProvider(),
+        FinnhubNewsProvider(),
+        NewsAPIProvider(),
+        AlphaVantageNewsProvider(),
+    ]
+
+
+def collect_all_news(
+    limit_per_source: int = 50,
+    markets: list[str] | None = None,
+    symbols: list[str] | None = None,
+    keywords: list[str] | None = None,
+) -> dict:
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(get_project_dir() / ".env", override=False)
+    except Exception:
+        pass
+
+    warnings: list[str] = []
+    provider_stats: dict[str, dict] = {}
+    all_items: list[NewsItem] = []
+    requested_markets = {market.upper() for market in markets or [] if market}
+    requested_symbols = [symbol.strip().upper() for symbol in symbols or [] if symbol.strip()]
+    requested_keywords = [keyword.strip() for keyword in keywords or [] if keyword.strip()]
+
+    for provider in _init_multi_source_providers():
+        provider_items: list[NewsItem] = []
+        provider_warnings_before = len(provider.warnings)
+        try:
+            provider_items.extend(provider.fetch_latest(limit=limit_per_source, markets=markets))
+            for symbol in requested_symbols:
+                provider_items.extend(provider.fetch_by_symbol(symbol, limit=max(5, limit_per_source // 2)))
+            for keyword in requested_keywords:
+                provider_items.extend(provider.fetch_by_keyword(keyword, limit=max(5, limit_per_source // 2)))
+        except Exception as exc:
+            provider.warnings.append(f"{provider.provider_name} 采集失败：{type(exc).__name__}: {exc}")
+
+        if requested_markets:
+            filtered = []
+            for item in provider_items:
+                item_markets = {market.upper() for market in item.markets}
+                if not item_markets or item_markets & requested_markets or "GLOBAL" in item_markets:
+                    filtered.append(item)
+            provider_items = filtered
+
+        scored = score_news_items(provider_items, focus_symbols=requested_symbols)
+        all_items.extend(scored)
+        provider_warnings = provider.warnings[provider_warnings_before:]
+        warnings.extend(provider_warnings)
+        provider_stats[provider.provider_name] = {
+            "fetched": len(provider_items),
+            "warnings": provider_warnings,
+        }
+
+    deduped = deduplicate_news_items(all_items)
+    store = NewsResearchStore()
+    saved_count = store.save_news_items(deduped)
+
+    for name in list(provider_stats):
+        provider_stats[name]["saved"] = len([item for item in deduped if item.provider == name])
+
+    return {
+        "items": deduped,
+        "saved_count": saved_count,
+        "provider_stats": provider_stats,
+        "warnings": warnings,
+        "last_update": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }

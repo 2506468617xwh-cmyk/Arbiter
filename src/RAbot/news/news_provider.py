@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote_plus
 
 import feedparser
@@ -10,9 +11,24 @@ import pandas as pd
 import yaml
 from bs4 import BeautifulSoup
 
-from RAbot.news.news_engine import build_news_interpretation, enrich_news_dataframe
-from RAbot.news.news_quality import deduplicate_news, enrich_news_quality
+from RAbot.news.news_models import NewsItem
 from RAbot.settings import get_project_dir
+
+
+class BaseNewsProvider:
+    provider_name = "base"
+
+    def __init__(self) -> None:
+        self.warnings: list[str] = []
+
+    def fetch_latest(self, limit: int = 50, **kwargs: Any) -> list[NewsItem]:
+        return []
+
+    def fetch_by_symbol(self, symbol: str, limit: int = 50, **kwargs: Any) -> list[NewsItem]:
+        return []
+
+    def fetch_by_keyword(self, keyword: str, limit: int = 50, **kwargs: Any) -> list[NewsItem]:
+        return []
 
 
 @dataclass
@@ -102,6 +118,9 @@ class GoogleNewsRSSProvider:
         return f"https://news.google.com/rss/search?q={query}&hl={language}&gl={region}&ceid={ceid}"
 
     def fetch_source(self, source: NewsSourceConfig) -> pd.DataFrame:
+        from RAbot.news.news_engine import build_news_interpretation, enrich_news_dataframe
+        from RAbot.news.news_quality import deduplicate_news, enrich_news_quality
+
         url = self.build_url(source)
         feed = feedparser.parse(url)
 

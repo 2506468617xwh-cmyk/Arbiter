@@ -11,6 +11,9 @@ env/
 .env
 .env.*
 !.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 # Local database
 *.db
@@ -22,9 +25,6 @@ data/market/*.db
 data/reports/*.md
 data/reports/*.txt
 data/reports/*.markdown
-
-# Streamlit local secrets
-.streamlit/secrets.toml
 
 # IDE / OS
 .vscode/
@@ -38,3 +38,7 @@ logs/
 tmp/
 temp/
 *.tmp
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

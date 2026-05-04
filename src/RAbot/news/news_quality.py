@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import hashlib
 import re
-import string
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import yaml
 
+from RAbot.news.news_dedup import normalize_title, title_hash
+from RAbot.news.news_models import NewsItem
 from RAbot.settings import get_project_dir
 
 
@@ -75,6 +75,21 @@ EVENT_KEYWORDS = {
     ],
 }
 
+# 情绪关键词（与 news_engine 共享的统一定义）
+BULLISH_WORDS = [
+    "rally", "rebounds", "rebound", "surges", "jumps", "gains", "beats", "strong",
+    "optimism", "stimulus", "easing", "cut", "cuts", "dovish", "growth",
+    "record high", "soft landing",
+    "降息", "刺激", "反弹", "上涨", "增长", "利好", "回暖", "改善", "超预期"
+]
+
+BEARISH_WORDS = [
+    "falls", "fall", "drops", "drop", "selloff", "sell-off", "slumps", "weak",
+    "misses", "inflation", "higher yields", "yields rise", "hawkish", "recession",
+    "risk", "warning", "crackdown", "tariff", "sanctions",
+    "下跌", "回落", "通胀", "衰退", "风险", "利空", "制裁", "关税", "低迷", "不及预期"
+]
+
 
 def get_news_quality_config_path() -> Path:
     return get_project_dir() / "config" / "news_quality.yaml"
@@ -94,32 +109,16 @@ def load_news_quality_config() -> dict:
         return yaml.safe_load(f) or {}
 
 
-def normalize_title(title: str | None) -> str:
-    text = (title or "").lower().strip()
-
-    # 去掉常见媒体尾巴，比如 " - Reuters"
-    text = re.sub(r"\s[-|—]\s.*$", "", text)
-
-    # 去标点
-    translator = str.maketrans("", "", string.punctuation + "，。！？；：“”‘’、（）【】《》")
-    text = text.translate(translator)
-
-    # 合并空白
-    text = re.sub(r"\s+", " ", text).strip()
-
-    # 去掉非常常见的低信息词
-    stop_words = {
-        "the", "a", "an", "to", "of", "in", "on", "for", "and", "as", "with",
-        "after", "before", "amid", "over", "from", "by", "at"
-    }
-
-    tokens = [x for x in text.split(" ") if x and x not in stop_words]
-    return " ".join(tokens)
-
-
-def title_hash(title: str | None) -> str:
-    normalized = normalize_title(title)
-    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
+def infer_sentiment(title: str, summary: str | None = None) -> str:
+    """统一情绪推断：从 news_engine 合并至此，避免重复定义。"""
+    text = f"{title or ''} {summary or ''}".lower().strip()
+    bullish = sum(1 for word in BULLISH_WORDS if word.lower() in text)
+    bearish = sum(1 for word in BEARISH_WORDS if word.lower() in text)
+    if bullish > bearish:
+        return "偏利多"
+    if bearish > bullish:
+        return "偏利空"
+    return "中性"
 
 
 def infer_source_score(source_name: str | None, config: dict | None = None) -> tuple[int, str]:
@@ -172,6 +171,40 @@ def classify_event_type(title: str | None, summary: str | None = None) -> str:
         return "其他"
 
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)[0][0]
+
+
+# 统一的重要性关键词（合并自 news_engine 和 news_quality 两处定义）
+_IMPORTANT_KEYWORDS = [
+    "fed", "federal reserve", "fomc", "powell", "cpi", "inflation", "jobs",
+    "payrolls", "treasury", "yield", "earnings", "nvidia", "microsoft", "apple",
+    "ai", "semiconductor", "china", "stimulus", "pmi", "oil", "gold", "dollar",
+    "recession", "geopolitical", "tariff", "sanction",
+    "美联储", "通胀", "非农", "收益率", "英伟达", "微软", "人工智能",
+    "中国", "政策", "刺激", "黄金", "原油", "美元", "港股", "A股",
+    "人民币", "地产", "沪深300", "上证指数", "恒生", "PMI", "美债", "降息", "加息",
+]
+
+
+def calculate_importance_score(title: str | None, summary: str | None = None, related_assets: list[str] | None = None) -> int:
+    """统一的重要性评分（合并自 news_engine 和 news_quality 两处定义）。"""
+    text = f"{title or ''} {summary or ''}".lower()
+    score = 20
+
+    for keyword in _IMPORTANT_KEYWORDS:
+        if keyword.lower() in text:
+            score += 7
+
+    if related_assets:
+        score += min(20, len(related_assets) * 5)
+
+    if re.search(r"\b(cpi|fomc|fed|powell|nvidia|earnings|stimulus|treasury|yields|inflation|pmi)\b", text):
+        score += 13
+
+    for zh_key in ["美联储", "通胀", "非农", "美债", "收益率", "政策", "刺激", "地产", "人民币", "A股", "港股"]:
+        if zh_key in text:
+            score += 8
+
+    return max(0, min(100, score))
 
 
 def calculate_freshness_score(published_at: str | None) -> int:
@@ -255,7 +288,7 @@ def enrich_news_quality(df: pd.DataFrame) -> pd.DataFrame:
         summary = row.get("summary", "")
         source_name = row.get("source_name", "")
         published_at = row.get("published_at", "")
-        importance_score = row.get("importance_score", 0)
+        importance_score_val = row.get("importance_score", 0)
         related_assets = row.get("related_assets", "")
 
         normalized = normalize_title(title)
@@ -267,7 +300,7 @@ def enrich_news_quality(df: pd.DataFrame) -> pd.DataFrame:
         quality = calculate_quality_score(
             source_score=source_score,
             freshness_score=freshness,
-            importance_score=int(importance_score or 0),
+            importance_score=int(importance_score_val or 0),
             event_type=event_type,
             related_assets=related_assets,
             config=config,
@@ -312,6 +345,84 @@ def deduplicate_news(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     data = data.drop_duplicates(subset=["title_hash"], keep="first")
-    data = data.drop_duplicates(subset=["link"], keep="first")
+    if "link" in data.columns:
+        data = data.drop_duplicates(subset=["link"], keep="first")
 
     return data.reset_index(drop=True)
+
+
+RISK_TAG_KEYWORDS = {
+    "macro_policy": ["fed", "fomc", "powell", "央行", "美联储", "降息", "加息", "利率", "货币政策"],
+    "earnings": ["earnings", "revenue", "profit", "guidance", "财报", "业绩", "利润", "盈利预警"],
+    "regulation": ["regulation", "监管", "罚款", "调查", "反垄断"],
+    "geopolitics": ["war", "sanction", "tariff", "geopolitical", "战争", "制裁", "关税", "地缘"],
+    "liquidity": ["liquidity", "流动性", "逆回购", "融资", "资金面"],
+    "credit": ["credit", "default", "debt", "债务", "违约", "信用"],
+    "ai_chip": ["ai", "chip", "nvidia", "semiconductor", "人工智能", "芯片", "半导体", "英伟达"],
+    "china_market": ["china", "a-share", "csi", "中国", "a股", "沪深300", "上证"],
+    "us_market": ["nasdaq", "s&p", "dow", "wall street", "美股", "纳斯达克", "标普"],
+    "hk_market": ["hong kong", "hang seng", "港股", "恒生"],
+    "commodity": ["oil", "gold", "copper", "commodity", "原油", "黄金", "大宗商品", "铜"],
+    "fx_rate": ["dollar", "yuan", "renminbi", "fx", "美元", "人民币", "汇率"],
+}
+
+
+TITLE_CLICKBAIT = ["shocking", "you won't believe", "爆了", "惊呆", "速看"]
+
+
+def infer_risk_tags(title: str | None, summary: str | None = None, topics: list[str] | None = None) -> list[str]:
+    text = f"{title or ''} {summary or ''} {' '.join(str(topic) for topic in (topics or []))}".lower()
+    tags = []
+    for tag, keywords in RISK_TAG_KEYWORDS.items():
+        if any(keyword.lower() in text for keyword in keywords):
+            tags.append(tag)
+    return tags
+
+
+def infer_markets(title: str | None, summary: str | None = None, markets: list[str] | None = None) -> list[str]:
+    result = set(markets or [])
+    text = f"{title or ''} {summary or ''}".lower()
+    if any(key in text for key in ["a股", "沪深", "上证", "china", "中国"]):
+        result.add("CN")
+    if any(key in text for key in ["nasdaq", "s&p", "wall street", "fed", "美股", "美联储"]):
+        result.add("US")
+    if any(key in text for key in ["港股", "恒生", "hong kong"]):
+        result.add("HK")
+    if any(key in text for key in ["oil", "gold", "美元", "原油", "黄金", "global"]):
+        result.add("GLOBAL")
+    return sorted(result)
+
+
+def score_news_item(item: NewsItem, focus_symbols: list[str] | None = None) -> NewsItem:
+    text = f"{item.title} {item.summary or ''} {item.content or ''}"
+    related_assets = item.symbols or []
+    importance = calculate_importance_score(item.title, item.summary, related_assets)
+    tags = infer_risk_tags(item.title, item.summary, item.topics)
+    markets = infer_markets(item.title, item.summary, item.markets)
+    source_score, _ = infer_source_score(item.source)
+    freshness = calculate_freshness_score(item.published_at)
+    source_bonus = 6 if item.url else -4
+    body_bonus = 6 if item.summary or item.content else 0
+    clickbait_penalty = 12 if any(word in text.lower() for word in TITLE_CLICKBAIT) else 0
+    focus_bonus = 0
+    focus = {symbol.upper() for symbol in focus_symbols or []}
+    if focus and any(symbol.upper() in focus for symbol in related_assets):
+        focus_bonus = 12
+    quality = source_score * 0.35 + freshness * 0.25 + importance * 0.25 + source_bonus + body_bonus - clickbait_penalty
+    item.importance_score = max(0, min(100, float(importance + focus_bonus + min(12, len(tags) * 2))))
+    item.quality_score = max(0, min(100, float(round(quality, 1))))
+    # 统一情绪推断（解决此前新版 NewsItem 缺失 sentiment_score 的问题）
+    item.sentiment_score = float(
+        {"偏利多": 0.6, "偏利空": -0.6, "中性": 0.0}.get(
+            infer_sentiment(item.title, item.summary), 0.0
+        )
+    )
+    item.risk_tags = sorted(set([*item.risk_tags, *tags]))
+    item.markets = markets
+    if not item.topics:
+        item.topics = item.risk_tags[:]
+    return item
+
+
+def score_news_items(items: list[NewsItem], focus_symbols: list[str] | None = None) -> list[NewsItem]:
+    return [score_news_item(item, focus_symbols=focus_symbols) for item in items]

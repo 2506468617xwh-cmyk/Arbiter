@@ -21,7 +21,7 @@ from RAbot.analysis.research_engine import (
     build_single_asset_research,
 )
 from RAbot.macro.macro_store import MacroStore
-from RAbot.news.news_store import NewsStore
+from RAbot.news.news_store import NewsResearchStore, news_items_to_dataframe
 from RAbot.settings import get_db_path
 from RAbot.storage.sqlite_store import SQLiteStore
 
@@ -94,12 +94,18 @@ def _fmt_float(value: Any, digits: int = 2) -> str:
 
 def _load_all_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     store = SQLiteStore(get_db_path())
-    news_store = NewsStore(get_db_path())
     macro_store = MacroStore(get_db_path())
 
     all_data = _safe_call(lambda: store.read_index_daily(), pd.DataFrame())
-    all_news = _safe_call(lambda: news_store.read_news(limit=DEFAULT_CONTEXT_NEWS_LIMIT), pd.DataFrame())
     all_macro = _safe_call(lambda: macro_store.read_macro_series(), pd.DataFrame())
+
+    # 使用新版 NewsResearchStore 读取多源新闻，转为旧版兼容 DataFrame
+    try:
+        news_store = NewsResearchStore()
+        news_items = news_store.list_latest(limit=DEFAULT_CONTEXT_NEWS_LIMIT)
+        all_news = news_items_to_dataframe(news_items)
+    except Exception:
+        all_news = pd.DataFrame()
 
     return all_data, all_news, all_macro
 

@@ -8,7 +8,7 @@ import pandas as pd
 
 from RAbot.analysis.indicators import build_asset_performance_table
 from RAbot.macro.macro_store import MacroStore
-from RAbot.news.news_store import NewsStore
+from RAbot.news.news_store import NewsResearchStore, news_items_to_dataframe
 from RAbot.settings import get_db_path
 from RAbot.storage.sqlite_store import SQLiteStore
 
@@ -30,8 +30,8 @@ class ResearchAlert:
 class AlertsEngine:
     def __init__(self) -> None:
         self.store = SQLiteStore(get_db_path())
-        self.news_store = NewsStore(get_db_path())
         self.macro_store = MacroStore(get_db_path())
+        self._news_research_store = NewsResearchStore()
 
     def _now(self) -> str:
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -68,7 +68,8 @@ class AlertsEngine:
             all_data = pd.DataFrame()
 
         try:
-            all_news = self.news_store.read_news(limit=500)
+            news_items = self._news_research_store.list_latest(limit=500)
+            all_news = news_items_to_dataframe(news_items)
         except Exception:
             all_news = pd.DataFrame()
 
