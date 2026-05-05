@@ -100,7 +100,7 @@ CORE_CSS = f"""
     .rabot-tag-accent {{ background:var(--brand-soft); color:var(--brand); border-color:var(--brand); }}
     .rabot-metric-label {{ font-size:.74rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }}
     .rabot-metric-value {{ font-size:1.35rem; font-weight:700; color:var(--ink); }}
-    .rabot-up {{ color:#059669 !important; }} .rabot-down {{ color:#dc2626 !important; }}
+    .rabot-up {{ color:#dc2626 !important; }} .rabot-down {{ color:#059669 !important; }}
     .rabot-sidebar {{ border-left:1px solid var(--line); background:var(--panel); padding:1rem 1.2rem; border-radius:12px; box-shadow:var(--shadow); }}
     .rabot-settings-row {{ display:flex; align-items:center; justify-content:space-between; padding:.4rem 0; }}
     .rabot-settings-label {{ font-size:.84rem; font-weight:600; color:var(--ink); }}
@@ -276,31 +276,61 @@ def page_dashboard():
         from backend.services.market_service import get_market_dashboard
         dash = get_market_dashboard()
     except Exception as e: st.error(str(e)); return
-    c1,c2,c3=st.columns(3)
+
+    c1,c2,c3,c4=st.columns(4)
     _metric_card("Status", dash.market_status, cols=c1)
     _metric_card("Assets", str(dash.asset_count), cols=c2)
     _metric_card("Latest", dash.latest_date or "-", cols=c3)
-    import pandas as pd
-    tab1,tab2,tab3=st.tabs(["🔥 Strong","❄️ Weak","📋 All"])
-    def _make_df(items, extra=None):
-        rows=[]
+    _metric_card("Update", dash.last_update or "-", cols=c4)
+
+    if dash.summary: st.info(dash.summary)
+
+    def _bar(items, value_attr, label_attr="symbol", color="#dc2626", bar_color="#fecaca"):
+        """Horizontal bar chart rendered as styled HTML divs."""
+        if not items: return st.info(t("no_data"))
+        max_abs = max(abs(getattr(a, value_attr) or 0) for a in items) or 1
         for a in items:
-            r={"Name":a.name or a.symbol,"1W%":_fmt_pct(a.return_1w),"1M%":_fmt_pct(a.return_1m),"3M%":_fmt_pct(a.return_3m),"YTD%":_fmt_pct(a.return_ytd),"Vol%":f"{a.volatility_20d:.1f}" if a.volatility_20d else "-"}
-            if extra:
-                for k,v in extra.items(): r[k]=getattr(a,v,None) or ""
-            rows.append(r)
-        return pd.DataFrame(rows)
+            val = getattr(a, value_attr) or 0
+            name = getattr(a, "name", None) or getattr(a, label_attr, "?")
+            pct = abs(val) / max_abs * 100
+            bar_clr = "#dc2626" if val > 0 else "#059669"
+            fill_clr = "#fecaca" if val > 0 else "#d1fae5"
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;font-size:.84rem">
+                <div style="width:70px;text-align:right;font-weight:600">{name}</div>
+                <div style="flex:1;height:20px;background:var(--bg-soft);border-radius:10px;overflow:hidden">
+                    <div style="width:{pct}%;height:100%;background:{fill_clr};border-radius:10px;display:flex;align-items:center;padding-left:6px">
+                        <span style="font-size:.74rem;color:{bar_clr};font-weight:600">{_fmt_pct(val)}</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    tab1,tab2,tab3,tab4=st.tabs(["🔥 强势", "❄️ 弱势", "📈 高波动", "📉 高回撤"])
+
     with tab1:
-        if dash.strong_assets: st.dataframe(_make_df(dash.strong_assets),use_container_width=True,hide_index=True)
-        else: st.info(t("no_data"))
+        items = dash.strong_assets or []
+        if dash.high_volatility_assets: items = items + [a for a in dash.high_volatility_assets if a not in items]
+        _bar(items[:12], "return_1m")
+
     with tab2:
-        if dash.weak_assets: st.dataframe(_make_df(dash.weak_assets,{"Risk":"risk_level"}),use_container_width=True,hide_index=True)
-        else: st.info(t("no_data"))
+        _bar(dash.weak_assets or [], "return_1m")
+
     with tab3:
-        from backend.services.market_service import get_market_performance
-        perf=get_market_performance()
-        if perf.items: st.dataframe(_make_df(perf.items,{"Trend":"trend_signal"}),use_container_width=True,hide_index=True,height=520)
-        else: st.info(t("no_data"))
+        _bar(dash.high_volatility_assets or [], "volatility_20d")
+
+    with tab4:
+        _bar(dash.high_drawdown_assets or [], "drawdown")
+
+    st.markdown("---")
+    st.markdown(f'<div class="rabot-metric-label">📋 Complete Ranking</div>', unsafe_allow_html=True)
+    import pandas as pd
+    from backend.services.market_service import get_market_performance
+    perf=get_market_performance()
+    if perf.items:
+        rows=[{"Name":a.name or a.symbol,"1W":_fmt_pct(a.return_1w),"1M":_fmt_pct(a.return_1m),"3M":_fmt_pct(a.return_3m),"YTD":_fmt_pct(a.return_ytd),"Vol":f"{a.volatility_20d:.1f}" if a.volatility_20d else "-","DD":f"{a.drawdown:.1f}" if a.drawdown else "-","Trend":a.trend_signal or ""} for a in perf.items]
+        st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True,height=520)
+    else: st.info(t("no_data"))
 
 
 def page_charts():
@@ -475,16 +505,32 @@ def page_macro():
     try:
         from backend.services.macro_service import get_macro_snapshot, get_macro_series
     except Exception as e: st.error(str(e)); return
+
     c1,c2=st.columns(2)
-    with c1: region=st.selectbox("Region",["","US","CN","EU","JP","GLOBAL"],format_func=lambda x:{"":"All","US":"US","CN":"China","EU":"Europe","JP":"Japan","GLOBAL":"Global"}[x])
-    with c2: category=st.selectbox("Category",["","GDP","Inflation","Employment","Interest Rate","Money Supply","Trade","Housing","Consumer","Business","Other"],format_func=lambda x:x or "All")
+    with c1: region=st.selectbox("地区",["","US","CN","EU","JP","GLOBAL"],format_func=lambda x:{"":"全部","US":"美国","CN":"中国","EU":"欧洲","JP":"日本","GLOBAL":"全球"}[x],key="m_reg")
+    with c2: category=st.selectbox("类别",["","GDP","Inflation","Employment","Interest Rate","Money Supply","Trade","Housing","Consumer","Business","Other"],format_func=lambda x:x or "全部",key="m_cat")
+
     try: snap=get_macro_snapshot(region=region or None,category=category or None)
     except Exception as e: st.error(str(e)); return
     if not snap.items: st.info(t("no_data")); return
+
+    # Overview cards
+    c1,c2,c3,c4=st.columns(4)
+    _metric_card("指标数", str(snap.count), cols=c1)
+    _metric_card("覆盖地区", str(len(snap.regions)), cols=c2)
+    _metric_card("覆盖类别", str(len(snap.categories)), cols=c3)
+    _metric_card("更新于", snap.last_update or "-", cols=c4)
+
+    # Snapshot table
     import pandas as pd
-    st.dataframe(pd.DataFrame([{"Indicator":i.name or i.symbol,"Region":i.region or "","Value":f"{i.latest_value:.2f}" if i.latest_value else "-","3M%":_fmt_pct(i.change_3m),"Trend":i.trend_label or ""} for i in snap.items]),use_container_width=True,hide_index=True,height=320)
+    st.dataframe(pd.DataFrame([
+        {"指标":i.name or i.symbol,"地区":i.region or "","最新值":f"{i.latest_value:.2f}" if i.latest_value else "-","1M变化":_fmt_pct(i.change_1m),"3M变化":_fmt_pct(i.change_3m),"趋势":i.trend_label or "",} for i in snap.items
+    ]),use_container_width=True,hide_index=True,height=320)
+
+    # Chart section
+    st.markdown(f'<div class="rabot-metric-label">📈 走势图对比（最多6个）</div>', unsafe_allow_html=True)
     opts={f"{i.name or i.symbol} ({i.symbol})":i.symbol for i in snap.items}
-    sel=st.multiselect("Compare (max 6)",list(opts.keys()),max_selections=6)
+    sel=st.multiselect("选择指标",list(opts.keys()),max_selections=6,label_visibility="collapsed")
     if sel:
         syms=[opts[l] for l in sel]
         try: series=get_macro_series(syms,limit_per_symbol=240)
@@ -494,12 +540,17 @@ def page_macro():
             if "date" in df.columns:
                 import plotly.graph_objects as go
                 df["date"]=pd.to_datetime(df["date"]); fig=go.Figure()
-                colors=["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899"]
+                colors=["#dc2626","#3b82f6","#fbbf24","#10b981","#8b5cf6","#ec4899"]
                 for i,sym in enumerate(syms):
                     sdf=df[df["symbol"]==sym].sort_values("date"); vals=sdf["value"].dropna()
                     if len(vals)==0: continue
-                    fv=vals.iloc[0]; fig.add_trace(go.Scatter(x=sdf["date"],y=sdf["value"]/fv*100,mode="lines",name=sel[i].split("(")[0].strip(),line=dict(color=colors[i%6],width=1.8)))
-                fig.update_layout(template="plotly_white",hovermode="x unified",height=400,margin=dict(l=0,r=0,t=0,b=0),legend=dict(orientation="h",y=-.18))
+                    fv=vals.iloc[0]
+                    name=sel[i].split("(")[0].strip()
+                    latest_val = float(sdf["value"].dropna().iloc[-1]) if len(sdf["value"].dropna()) else 0
+                    change_pct = (latest_val / fv - 1) * 100 if fv else 0
+                    hovertemplate = f"{name}<br>归一化: %{{y:.1f}}<br>累计变化: {change_pct:+.1f}%"
+                    fig.add_trace(go.Scatter(x=sdf["date"],y=sdf["value"]/fv*100,mode="lines",name=name,hovertemplate=hovertemplate,line=dict(color=colors[i%6],width=2)))
+                fig.update_layout(template="plotly_white",hovermode="x unified",height=440,margin=dict(l=0,r=0,t=10,b=0),legend=dict(orientation="h",y=-.18))
                 st.plotly_chart(fig,use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -583,22 +634,23 @@ def page_news():
 def page_ai():
     st.markdown("## 🤖 " + t("ai"))
     use=st.session_state.use_llm
-    scope=st.radio("Scope",["market","single_asset","multi_asset"],horizontal=True,
-                   format_func=lambda s:{"market":"Market","single_asset":"Single","multi_asset":"Multi"}[s])
+    scope=st.radio("研究范围",["market","single_asset","multi_asset"],horizontal=True,
+                   format_func=lambda s:{"market":"全市场","single_asset":"单资产","multi_asset":"多资产"}[s])
     asset=None; syms=[]
-    if scope=="single_asset": asset=st.text_input("Symbol","000300.SH").strip().upper() or None
+    if scope=="single_asset": asset=st.text_input("资产代码",placeholder="000300.SH 或 QQQ.US").strip().upper() or None
     elif scope=="multi_asset":
-        inp=st.text_input("Symbols (,)", "000300.SH, QQQ.US").strip()
+        inp=st.text_input("资产代码（逗号分隔）",placeholder="000300.SH, QQQ.US").strip()
         syms=[s.strip().upper() for s in inp.split(",") if s.strip()]
-    if st.button("⚡ Summarize",disabled=not use):
+    if st.button("⚡ 生成摘要",disabled=not use):
         with st.spinner(t("loading")):
             from backend.services.llm_service import generate_quick_summary
             from backend.schemas.llm import LLMQuickSummaryRequest
             r=generate_quick_summary(LLMQuickSummaryRequest(scope=scope,asset_symbol=asset,symbols=syms,use_llm=True))
         if r.ok: st.success(r.text)
         else: st.info(r.text)
-    q=st.text_area("💬 Question",placeholder="What's the biggest market risk?",height=100,key="ai_q")
-    if st.button("Ask",disabled=not q.strip() or not use,type="primary"):
+        for w in r.warnings: st.warning(w)
+    q=st.text_area("💬 你的问题",placeholder="当前市场最大的风险是什么？",height=100,key="ai_q")
+    if st.button("提问",disabled=not q.strip() or not use,type="primary"):
         with st.spinner(t("loading")):
             from backend.services.llm_service import answer_research_question
             from backend.schemas.llm import LLMChatRequest
