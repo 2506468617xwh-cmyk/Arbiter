@@ -455,9 +455,9 @@ def page_macro():
         st.info("暂无宏观数据"); return
 
     import pandas as pd
-    st.dataframe(pd.DataFrame([{"指标":i.name or i.indicator,"地区":i.region or "","最新值":f"{i.latest_value:.2f}" if i.latest_value else "-","3M变化":_fmt_pct(i.change_3m),"趋势":i.trend_label or ""} for i in snap.items]), use_container_width=True, hide_index=True, height=320)
+    st.dataframe(pd.DataFrame([{"指标":i.name or i.symbol,"地区":i.region or "","最新值":f"{i.latest_value:.2f}" if i.latest_value else "-","3M变化":_fmt_pct(i.change_3m),"趋势":i.trend_label or ""} for i in snap.items]), use_container_width=True, hide_index=True, height=320)
 
-    opts={f"{i.name or i.indicator} ({i.indicator})":i.indicator for i in snap.items}
+    opts={f"{i.name or i.symbol} ({i.symbol})":i.symbol for i in snap.items}
     sel=st.multiselect("对比走势（最多6个）",list(opts.keys()),max_selections=6)
     if sel:
         syms=[opts[l] for l in sel]
