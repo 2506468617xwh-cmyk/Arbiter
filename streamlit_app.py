@@ -492,9 +492,10 @@ def page_news():
                 st.markdown(" ".join(f'<span class="rabot-tag">{t}</span>' for t in tags[:10] if t), unsafe_allow_html=True)
             if summary:
                 st.markdown(f'<div class="rabot-summary">{summary}</div>', unsafe_allow_html=True)
-            if item.content and item.content != summary:
+            content = getattr(item, "content", None) or ""
+            if content and content != summary:
                 with st.expander(t("read_more")):
-                    st.markdown(item.content[:2000])
+                    st.markdown(content[:2000])
             if url:
                 st.markdown(f"[🌐 {t('view_original')}]({url})")
 
