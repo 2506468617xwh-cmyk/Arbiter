@@ -139,6 +139,8 @@ def _legacy_fallback_enabled() -> bool:
 
 
 def _should_auto_collect(stats: dict[str, Any], *, filtered: bool) -> bool:
+    if _auto_refresh_minutes() == 0:
+        return False
     global _LAST_AUTO_COLLECT_AT
     now = datetime.now()
     if _LAST_AUTO_COLLECT_AT and (now - _LAST_AUTO_COLLECT_AT) < timedelta(minutes=5):

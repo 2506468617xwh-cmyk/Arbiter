@@ -12,6 +12,10 @@ try:
 except Exception:
     pass
 
+# ── Streamlit Cloud 上禁用自动采集，避免免费 API 限流轰炸 ──────────
+os.environ.setdefault("RABOT_AUTO_UPDATE_ON_START", "false")
+os.environ.setdefault("RABOT_NEWS_AUTO_REFRESH_MINUTES", "0")
+
 st.set_page_config(
     page_title="RAbot 投研助手",
     page_icon="🍔",

@@ -10,8 +10,10 @@ class AKShareNewsProvider(BaseNewsProvider):
     def fetch_latest(self, limit: int = 50, **kwargs) -> list[NewsItem]:
         try:
             import akshare as ak
-        except Exception as exc:
-            self.warnings.append(f"AKShare 未安装或导入失败，可选增强源已跳过：{type(exc).__name__}: {exc}")
+        except Exception:
+            return []
+
+        if not hasattr(ak, "js_news"):
             return []
 
         try:
@@ -19,15 +21,12 @@ class AKShareNewsProvider(BaseNewsProvider):
         except TypeError:
             try:
                 df = ak.js_news()
-            except Exception as exc:
-                self.warnings.append(f"AKShare 金十资讯抓取失败：{type(exc).__name__}: {exc}")
+            except Exception:
                 return []
-        except Exception as exc:
-            self.warnings.append(f"AKShare 金十资讯抓取失败：{type(exc).__name__}: {exc}")
+        except Exception:
             return []
 
         if df is None or df.empty:
-            self.warnings.append("AKShare 金十资讯返回为空。")
             return []
 
         items: list[NewsItem] = []
