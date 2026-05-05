@@ -147,6 +147,26 @@ THEME_LABELS = {"warm": "默认暖色", "white-red": "白+红", "black-blue": "�
 # ══════════════════════════════════════════════════════════════════════
 def _fmt_pct(v): return f"{v:+.2f}%" if v is not None else "-"
 
+TAG_CN = {
+    "AI": "人工智能", "chips": "芯片", "semiconductor": "半导体",
+    "Federal Reserve": "美联储", "inflation": "通胀", "interest rate": "利率",
+    "China economy": "中国经济", "Hong Kong stocks": "港股", "A shares": "A股",
+    "US stocks": "美股", "macro": "宏观", "commodity": "商品", "forex": "外汇",
+    "crypto": "加密货币", "energy": "能源", "tech": "科技", "earnings": "财报",
+    "trade": "贸易", "policy": "政策", "real estate": "房地产", "employment": "就业",
+    "GDP": "GDP", "manufacturing": "制造业", "services": "服务业", "PMI": "PMI",
+    "bond": "债券", "equity": "权益", "volatility": "波动率", "risk": "风险",
+    "bullish": "看涨", "bearish": "看跌", "neutral": "中性",
+    "CN": "中国", "US": "美国", "HK": "香港", "GLOBAL": "全球",
+    "market": "市场", "economy": "经济", "rate cut": "降息", "rate hike": "加息",
+    "oil": "原油", "gold": "黄金", "housing": "房地产", "consumer": "消费",
+    "regulation": "监管", "sanction": "制裁", "tariff": "关税", "geopolitics": "地缘",
+    "earnings report": "财报", "IPO": "上市", "M&A": "并购", "buyback": "回购",
+    "dividend": "分红", "ETF": "ETF", "fund": "基金",
+}
+def _tag_cn(tag: str) -> str:
+    return TAG_CN.get(tag, tag)
+
 def _metric_card(label, value, delta=None, cols=None):
     html = f'<div class="rabot-card"><div class="rabot-metric-label">{label}</div><div class="rabot-metric-value">{value}</div>'
     if delta:
@@ -461,7 +481,7 @@ def page_news():
         title = item.title or "(untitled)"
         url = getattr(item, "url", None)
         summary = item.summary or ""
-        tags = (item.risk_tags or []) + (item.topics or [])[:3]
+        tags = [_tag_cn(t) for t in ((item.risk_tags or []) + (item.topics or [])[:3])]
 
         # Truncate summary
         short_summary = summary[:120] + ("…" if len(summary) > 120 else "")
@@ -475,7 +495,7 @@ def page_news():
                 </div>
             </div>
             <div style="margin-top:.5rem">
-                {" ".join(f'<span class="rabot-tag rabot-tag-accent">{t}</span>' for t in tags[:6] if t)}
+                {" ".join(f'<span class="rabot-tag rabot-tag-accent">{t}</span>' for t in tags[:6])}
             </div>
             <div class="rabot-card-meta">{item.source or "?"} · {item.published_at or "?"}</div>
         </div>
@@ -489,7 +509,7 @@ def page_news():
             if item.provider: meta_parts.append(f"**Provider:** {item.provider}")
             st.markdown(" · ".join(meta_parts))
             if tags:
-                st.markdown(" ".join(f'<span class="rabot-tag">{t}</span>' for t in tags[:10] if t), unsafe_allow_html=True)
+                st.markdown(" ".join(f'<span class="rabot-tag">{t}</span>' for t in tags[:10]), unsafe_allow_html=True)
             if summary:
                 st.markdown(f'<div class="rabot-summary">{summary}</div>', unsafe_allow_html=True)
             content = getattr(item, "content", None) or ""
