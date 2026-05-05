@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(python -m json.tool)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(Get-ChildItem -File \"e:\\\\RAbot\\\\frontend\\\\src\\\\vite-env.d.ts\")",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

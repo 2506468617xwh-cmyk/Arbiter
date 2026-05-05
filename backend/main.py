@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from backend.api.funds import router as funds_router
 from backend.api.llm import router as llm_router
@@ -27,6 +27,10 @@ PROJECT_DIR = HERE.parent
 FRONTEND_DIST = PROJECT_DIR / "frontend" / "dist"
 
 
+class UTF8JSONResponse(JSONResponse):
+    media_type = "application/json; charset=utf-8"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     enabled = os.getenv("RABOT_AUTO_UPDATE_ON_START", "true").strip().lower()
@@ -35,7 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="RAbot API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="RAbot API", version="0.1.0", lifespan=lifespan, default_response_class=UTF8JSONResponse)
 
 # CORS — configurable via FRONTEND_ORIGINS env var
 _cors = os.getenv("FRONTEND_ORIGINS", "").strip()
