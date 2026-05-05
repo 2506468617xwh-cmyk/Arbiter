@@ -15,11 +15,9 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
-# Local database
-*.db
-data/*.db
-data/**/*.db
-data/market/*.db
+# Local database (seed data committed for Streamlit deployment)
+# *.db
+# data/**/*.db
 
 # Generated reports / local outputs
 data/reports/*.md

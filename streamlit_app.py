@@ -1,7 +1,16 @@
 """RAbot — Streamlit 版本  |  国内免 VPN 访问"""
 from __future__ import annotations
 
+import os
 import streamlit as st
+
+# ── 将 st.secrets 注入 os.environ，兼容所有 os.getenv() 调用 ──────────
+try:
+    for key, value in st.secrets.items():
+        if key not in os.environ and isinstance(value, str):
+            os.environ[key] = value
+except Exception:
+    pass
 
 st.set_page_config(
     page_title="RAbot 投研助手",
