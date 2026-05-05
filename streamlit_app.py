@@ -183,23 +183,27 @@ def page_charts():
     ts = get_market_timeseries(sel, normalize=(mode == "归一化"))
 
     if ts.items:
-        df = pd.DataFrame(ts.items)
-        df["date"] = pd.to_datetime(df["date"])
-        fig = go.Figure()
-        colors = ["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899","#f97316","#06b6d4"]
-        for i, sym in enumerate(sel):
-            sdf = df[df["symbol"]==sym].sort_values("date")
-            if sdf.empty: continue
-            if mode == "归一化":
-                y, label = sdf["normalized"], "归一化"
-            elif mode == "回撤":
-                y, label = sdf["drawdown"], "回撤%"
-            else:
-                y, label = sdf["close"], "收盘价"
-            name = sdf["name"].dropna().iloc[0] if len(sdf["name"].dropna()) else sym
-            fig.add_trace(go.Scatter(x=sdf["date"], y=y, mode="lines", name=name, line=dict(color=colors[i%8], width=2)))
-        fig.update_layout(template="plotly_white", hovermode="x unified", height=460, margin=dict(l=0,r=0,t=8,b=0), legend=dict(orientation="h", y=-.15))
-        st.plotly_chart(fig, use_container_width=True)
+        rows = [it.model_dump() for it in ts.items]
+        df = pd.DataFrame(rows)
+        if "date" not in df.columns:
+            st.warning("走势图数据格式异常，缺少日期列")
+        else:
+            df["date"] = pd.to_datetime(df["date"])
+            fig = go.Figure()
+            colors = ["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899","#f97316","#06b6d4"]
+            for i, sym in enumerate(sel):
+                sdf = df[df["symbol"]==sym].sort_values("date")
+                if sdf.empty: continue
+                if mode == "归一化":
+                    y, label = sdf["normalized"], "归一化"
+                elif mode == "回撤":
+                    y, label = sdf["drawdown"], "回撤%"
+                else:
+                    y, label = sdf["close"], "收盘价"
+                name = sdf["name"].dropna().iloc[0] if len(sdf["name"].dropna()) else sym
+                fig.add_trace(go.Scatter(x=sdf["date"], y=y, mode="lines", name=name, line=dict(color=colors[i%8], width=2)))
+            fig.update_layout(template="plotly_white", hovermode="x unified", height=460, margin=dict(l=0,r=0,t=8,b=0), legend=dict(orientation="h", y=-.15))
+            st.plotly_chart(fig, use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -234,8 +238,11 @@ def page_asset():
         if r.series:
             import pandas as pd
             import plotly.graph_objects as go
-            df = pd.DataFrame(r.series)
-            df["date"] = pd.to_datetime(df["date"])
+            rows = [it.model_dump() for it in r.series]
+            df = pd.DataFrame(rows)
+            if "date" not in df.columns: st.warning("数据异常")
+            else:
+                df["date"] = pd.to_datetime(df["date"])
             fig = go.Figure()
             if "close" in df.columns:
                 fc = df["close"].dropna().iloc[0] if len(df["close"].dropna()) else 1
@@ -291,21 +298,26 @@ def page_stock():
     if r.bars:
         import pandas as pd
         import plotly.graph_objects as go
-        df = pd.DataFrame(r.bars); df["date"]=pd.to_datetime(df["date"])
-        fig = go.Figure()
-        fc = df["close"].dropna().iloc[0] if len(df["close"].dropna()) else 1
-        fig.add_trace(go.Scatter(x=df["date"], y=df["close"]/fc*100, mode="lines", name=r.name or symbol, line=dict(color="#f59e0b", width=2)))
-        if "ma20" in df.columns and df["ma20"].notna().any():
-            fm=df["ma20"].dropna().iloc[0]; fig.add_trace(go.Scatter(x=df["date"], y=df["ma20"]/fm*100, mode="lines", name="MA20", line=dict(color="#3b82f6", dash="dot")))
-        if "ma60" in df.columns and df["ma60"].notna().any():
-            fm2=df["ma60"].dropna().iloc[0]; fig.add_trace(go.Scatter(x=df["date"], y=df["ma60"]/fm2*100, mode="lines", name="MA60", line=dict(color="#10b981", dash="dot")))
-        if r.benchmark_bars:
-            bm=pd.DataFrame(r.benchmark_bars); bm["date"]=pd.to_datetime(bm["date"])
-            if "close" in bm.columns and len(bm["close"].dropna()):
-                fbm=bm["close"].dropna().iloc[0]
-                fig.add_trace(go.Scatter(x=bm["date"], y=bm["close"]/fbm*100, mode="lines", name=r.benchmark_name or "基准", line=dict(color="#8b5cf6", dash="dash")))
-        fig.update_layout(template="plotly_white", hovermode="x unified", height=400, margin=dict(l=0,r=0,t=0,b=0), legend=dict(orientation="h", y=-.15))
-        st.plotly_chart(fig, use_container_width=True)
+        rows=[it.model_dump() for it in r.bars]; df=pd.DataFrame(rows)
+        if "date" not in df.columns: st.warning("K线数据异常")
+        else:
+            df["date"]=pd.to_datetime(df["date"])
+            fig = go.Figure()
+            fc = df["close"].dropna().iloc[0] if len(df["close"].dropna()) else 1
+            fig.add_trace(go.Scatter(x=df["date"], y=df["close"]/fc*100, mode="lines", name=r.name or symbol, line=dict(color="#f59e0b", width=2)))
+            if "ma20" in df.columns and df["ma20"].notna().any():
+                fm=df["ma20"].dropna().iloc[0]; fig.add_trace(go.Scatter(x=df["date"], y=df["ma20"]/fm*100, mode="lines", name="MA20", line=dict(color="#3b82f6", dash="dot")))
+            if "ma60" in df.columns and df["ma60"].notna().any():
+                fm2=df["ma60"].dropna().iloc[0]; fig.add_trace(go.Scatter(x=df["date"], y=df["ma60"]/fm2*100, mode="lines", name="MA60", line=dict(color="#10b981", dash="dot")))
+            if r.benchmark_bars:
+                bm_rows=[it.model_dump() for it in r.benchmark_bars]; bm=pd.DataFrame(bm_rows)
+                if "date" in bm.columns:
+                    bm["date"]=pd.to_datetime(bm["date"])
+                    if "close" in bm.columns and len(bm["close"].dropna()):
+                        fbm=bm["close"].dropna().iloc[0]
+                        fig.add_trace(go.Scatter(x=bm["date"], y=bm["close"]/fbm*100, mode="lines", name=r.benchmark_name or "基准", line=dict(color="#8b5cf6", dash="dash")))
+            fig.update_layout(template="plotly_white", hovermode="x unified", height=400, margin=dict(l=0,r=0,t=0,b=0), legend=dict(orientation="h", y=-.15))
+            st.plotly_chart(fig, use_container_width=True)
 
     c1,c2=st.columns(2)
     with c1: st.markdown(f"**趋势：** {r.trend_summary or '_暂无_'}")
@@ -348,18 +360,23 @@ def page_fund():
 
     if r.bars:
         import pandas as pd; import plotly.graph_objects as go
-        df=pd.DataFrame(r.bars); df["date"]=pd.to_datetime(df["date"])
-        col="nav" if "nav" in df.columns and df["nav"].notna().any() else "close"
-        fig=go.Figure()
-        fv=df[col].dropna().iloc[0] if len(df[col].dropna()) else 1
-        fig.add_trace(go.Scatter(x=df["date"], y=df[col]/fv*100, mode="lines", name=r.name or symbol, line=dict(color="#f59e0b", width=2)))
-        if r.benchmark_bars:
-            bm=pd.DataFrame(r.benchmark_bars); bm["date"]=pd.to_datetime(bm["date"])
-            if "close" in bm.columns and len(bm["close"].dropna()):
-                fbm=bm["close"].dropna().iloc[0]
-                fig.add_trace(go.Scatter(x=bm["date"], y=bm["close"]/fbm*100, mode="lines", name="基准", line=dict(color="#8b5cf6", dash="dash")))
-        fig.update_layout(template="plotly_white", hovermode="x unified", height=380, margin=dict(l=0,r=0,t=0,b=0))
-        st.plotly_chart(fig, use_container_width=True)
+        rows=[it.model_dump() for it in r.bars]; df=pd.DataFrame(rows)
+        if "date" not in df.columns: st.warning("数据异常")
+        else:
+            df["date"]=pd.to_datetime(df["date"])
+            col="nav" if "nav" in df.columns and df["nav"].notna().any() else "close"
+            fig=go.Figure()
+            fv=df[col].dropna().iloc[0] if len(df[col].dropna()) else 1
+            fig.add_trace(go.Scatter(x=df["date"], y=df[col]/fv*100, mode="lines", name=r.name or symbol, line=dict(color="#f59e0b", width=2)))
+            if r.benchmark_bars:
+                bm_rows=[it.model_dump() for it in r.benchmark_bars]; bm=pd.DataFrame(bm_rows)
+                if "date" in bm.columns:
+                    bm["date"]=pd.to_datetime(bm["date"])
+                    if "close" in bm.columns and len(bm["close"].dropna()):
+                        fbm=bm["close"].dropna().iloc[0]
+                        fig.add_trace(go.Scatter(x=bm["date"], y=bm["close"]/fbm*100, mode="lines", name="基准", line=dict(color="#8b5cf6", dash="dash")))
+            fig.update_layout(template="plotly_white", hovermode="x unified", height=380, margin=dict(l=0,r=0,t=0,b=0))
+            st.plotly_chart(fig, use_container_width=True)
 
     c1,c2=st.columns(2)
     with c1: st.markdown(f"**业绩：** {r.performance_summary or '_暂无_'}"); st.markdown(f"**风险：** {r.risk_summary or '_暂无_'}")
@@ -390,15 +407,17 @@ def page_multi():
         # Chart
         if r.normalized_series:
             import pandas as pd; import plotly.graph_objects as go
-            df=pd.DataFrame(r.normalized_series); df["date"]=pd.to_datetime(df["date"])
-            fig=go.Figure()
-            colors=["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899","#f97316","#06b6d4"]
-            for i,sym in enumerate(sel):
-                sdf=df[df["symbol"]==sym].sort_values("date")
-                if sdf.empty: continue
-                fig.add_trace(go.Scatter(x=sdf["date"], y=sdf["normalized"], mode="lines", name=sym, line=dict(color=colors[i%8], width=2)))
-            fig.update_layout(template="plotly_white", hovermode="x unified", height=400, margin=dict(l=0,r=0,t=0,b=0), legend=dict(orientation="h", y=-.15))
-            st.plotly_chart(fig, use_container_width=True)
+            rows=[it.model_dump() for it in r.normalized_series]; df=pd.DataFrame(rows)
+            if "date" in df.columns:
+                df["date"]=pd.to_datetime(df["date"])
+                fig=go.Figure()
+                colors=["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899","#f97316","#06b6d4"]
+                for i,sym in enumerate(sel):
+                    sdf=df[df["symbol"]==sym].sort_values("date")
+                    if sdf.empty: continue
+                    fig.add_trace(go.Scatter(x=sdf["date"], y=sdf["normalized"], mode="lines", name=sym, line=dict(color=colors[i%8], width=2)))
+                fig.update_layout(template="plotly_white", hovermode="x unified", height=400, margin=dict(l=0,r=0,t=0,b=0), legend=dict(orientation="h", y=-.15))
+                st.plotly_chart(fig, use_container_width=True)
 
         # Performance table
         if r.performance:
@@ -446,16 +465,18 @@ def page_macro():
         except: series=None
         if series and series.items:
             import plotly.graph_objects as go
-            df=pd.DataFrame(series.items); df["date"]=pd.to_datetime(df["date"])
-            fig=go.Figure()
-            colors=["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899"]
-            for i,sym in enumerate(syms):
-                sdf=df[df["symbol"]==sym].sort_values("date"); vals=sdf["value"].dropna()
-                if len(vals)==0: continue
-                fv=vals.iloc[0]
-                fig.add_trace(go.Scatter(x=sdf["date"],y=sdf["value"]/fv*100,mode="lines",name=sel[i].split("(")[0].strip(),line=dict(color=colors[i%6],width=1.8)))
-            fig.update_layout(template="plotly_white",hovermode="x unified",height=400,margin=dict(l=0,r=0,t=0,b=0),legend=dict(orientation="h",y=-.18))
-            st.plotly_chart(fig,use_container_width=True)
+            rows=[it.model_dump() for it in series.items]; df=pd.DataFrame(rows)
+            if "date" in df.columns:
+                df["date"]=pd.to_datetime(df["date"])
+                fig=go.Figure()
+                colors=["#f59e0b","#3b82f6","#10b981","#ef4444","#8b5cf6","#ec4899"]
+                for i,sym in enumerate(syms):
+                    sdf=df[df["symbol"]==sym].sort_values("date"); vals=sdf["value"].dropna()
+                    if len(vals)==0: continue
+                    fv=vals.iloc[0]
+                    fig.add_trace(go.Scatter(x=sdf["date"],y=sdf["value"]/fv*100,mode="lines",name=sel[i].split("(")[0].strip(),line=dict(color=colors[i%6],width=1.8)))
+                fig.update_layout(template="plotly_white",hovermode="x unified",height=400,margin=dict(l=0,r=0,t=0,b=0),legend=dict(orientation="h",y=-.18))
+                st.plotly_chart(fig,use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════
