@@ -23,3 +23,5 @@ openai>=1.100.0
 fastapi
 uvicorn
 pydantic
+streamlit
+plotly
