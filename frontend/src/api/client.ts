@@ -484,7 +484,7 @@ function getApiBaseUrl(): string {
   if (env) {
     return env.replace(/\/+$/, "");
   }
-  return "http://127.0.0.1:8000";
+  return "";
 }
 
 function apiUrl(path: string): string {
