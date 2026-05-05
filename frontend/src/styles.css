@@ -270,7 +270,6 @@ button {
   flex: 0 0 auto;
   animation: researchPetFloat 5.8s ease-in-out infinite;
   filter: drop-shadow(0 6px 10px rgba(52, 67, 79, 0.12));
-  mix-blend-mode: multiply;
   transition: transform 180ms ease;
 }
 
