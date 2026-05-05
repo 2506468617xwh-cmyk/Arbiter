@@ -1,4 +1,4 @@
-"""市场热力�?�?全资产表现排名与热力�?""
+"""市场热力榜 — 全资产表现排名与热力图"""
 from __future__ import annotations
 
 import streamlit as st
@@ -23,7 +23,7 @@ def _color_returns(val: float | None) -> str:
 
 
 def render() -> None:
-    st.title("📊 市场热力�?)
+    st.title("📊 市场热力榜")
 
     try:
         from backend.services.market_service import get_market_dashboard, get_market_performance
@@ -35,10 +35,10 @@ def render() -> None:
 
     # ── 顶部指标 ──
     cols = st.columns(4)
-    cols[0].metric("市场状�?, dashboard.market_status)
+    cols[0].metric("市场状态", dashboard.market_status)
     cols[1].metric("覆盖资产", str(dashboard.asset_count))
-    cols[2].metric("最新日�?, dashboard.latest_date or "-")
-    cols[3].metric("最后更�?, dashboard.last_update or "-")
+    cols[2].metric("最新日期", dashboard.latest_date or "-")
+    cols[3].metric("最后更新", dashboard.last_update or "-")
 
     if dashboard.warnings:
         for w in dashboard.warnings:
@@ -54,7 +54,7 @@ def render() -> None:
             strong_df = pd.DataFrame([{
                 "代码": a.symbol, "名称": a.name,
                 "1W%": a.return_1w, "1M%": a.return_1m, "YTD%": a.return_ytd,
-                "波动�?: a.volatility_20d, "趋势": a.trend_signal,
+                "波动率": a.volatility_20d, "趋势": a.trend_signal,
             } for a in dashboard.strong_assets])
             st.dataframe(strong_df.style.format(precision=2).applymap(_color_returns, subset=["1W%", "1M%", "YTD%"]), use_container_width=True)
         else:
@@ -77,7 +77,7 @@ def render() -> None:
                 "代码": a.symbol, "名称": a.name,
                 "收盘": a.close, "1W%": a.return_1w, "1M%": a.return_1m,
                 "3M%": a.return_3m, "YTD%": a.return_ytd, "1Y%": a.return_1y,
-                "波动�?: a.volatility_20d, "回撤": a.drawdown,
+                "波动率": a.volatility_20d, "回撤": a.drawdown,
                 "趋势": a.trend_signal, "风险": a.risk_level,
             } for a in perf.items])
             st.dataframe(

@@ -1,4 +1,4 @@
-"""首页 �?系统总览与状态一�?""
+"""首页 — 系统总览与状态一览"""
 from __future__ import annotations
 
 import streamlit as st
@@ -21,7 +21,7 @@ def render() -> None:
 
     # ── 指标卡片 ──
     cols = st.columns(5)
-    cols[0].metric("市场状�?, overview.market_status)
+    cols[0].metric("市场状态", overview.market_status)
     cols[1].metric("指数数量", str(overview.market.count) if overview.market else "-")
     cols[2].metric("新闻数量", str(overview.news.count) if overview.news else "-")
     cols[3].metric("宏观指标", str(overview.macro.count) if overview.macro else "-")

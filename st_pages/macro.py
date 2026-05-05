@@ -1,4 +1,4 @@
-"""宏观研究 �?全球宏观指标分析"""
+"""宏观研究 — 全球宏观指标分析"""
 from __future__ import annotations
 
 import streamlit as st
@@ -37,17 +37,17 @@ def render() -> None:
             return
 
     if not snapshot.items:
-        st.info("暂无宏观数据，请先运行数据更新脚本�?)
+        st.info("暂无宏观数据，请先运行数据更新脚本。")
         return
 
-    # ── 指标列表 �?可多选绘�?──
+    # ── 指标列表 → 可多选绘图 ──
     st.subheader("指标速览")
     df = pd.DataFrame([{
         "指标名称": item.name or item.indicator,
         "代码": item.indicator,
         "地区": item.region or "-",
-        "最新日�?: item.latest_date or "-",
-        "最新�?: f"{item.latest_value:.2f}" if item.latest_value is not None else "-",
+        "最新日期": item.latest_date or "-",
+        "最新值": f"{item.latest_value:.2f}" if item.latest_value is not None else "-",
         "趋势": item.trend_label or "-",
         "风险": item.risk_label or "-",
     } for item in snapshot.items])
@@ -55,7 +55,7 @@ def render() -> None:
     st.dataframe(df, use_container_width=True, height=300, hide_index=True)
 
     # ── 时序图表 ──
-    st.subheader("📈 指标走势对比（可多选，最�?6 个）")
+    st.subheader("📈 指标走势对比（可多选，最多 6 个）")
     indicator_options = {f"{item.name or item.indicator} ({item.indicator})": item.indicator for item in snapshot.items}
     selected_labels = st.multiselect("选择指标", list(indicator_options.keys()), max_selections=6)
 
@@ -90,7 +90,7 @@ def render() -> None:
                 ))
 
             fig.update_layout(
-                title="宏观指标归一化对�?, template="plotly_white",
+                title="宏观指标归一化对比", template="plotly_white",
                 hovermode="x unified", height=420,
                 margin=dict(l=0, r=0, t=40, b=0),
                 legend=dict(orientation="h", y=-0.18),
@@ -99,13 +99,13 @@ def render() -> None:
 
     # ── AI 宏观分析 ──
     st.subheader("🤖 AI 宏观分析")
-    question = st.text_input("输入你的宏观问题", placeholder="例如：当前美国通胀趋势如何影响全球资产配置�?)
+    question = st.text_input("输入你的宏观问题", placeholder="例如：当前美国通胀趋势如何影响全球资产配置？")
     if st.button("分析", type="primary", disabled=not question.strip()):
         use_llm = st.session_state.get("use_llm", True)
         if not use_llm:
-            st.warning("请在侧边栏启�?AI 模型")
+            st.warning("请在侧边栏启用 AI 模型")
         else:
-            with st.spinner("AI 分析�?.."):
+            with st.spinner("AI 分析中..."):
                 try:
                     from backend.services.macro_service import analyze_macro_with_llm
                     from backend.schemas.macro import MacroAnalysisRequest

@@ -1,4 +1,4 @@
-"""个股分析 �?深度单股研究"""
+"""个股分析 — 深度单股研究"""
 from __future__ import annotations
 
 import streamlit as st
@@ -27,7 +27,7 @@ def _build_kline_chart(bars, name: str, benchmark_bars, benchmark_name: str):
 
     fig.add_trace(go.Scatter(
         x=df["date"], y=norm_close, mode="lines",
-        name=f"{name} (归一�?", line=dict(color="#f59e0b", width=2),
+        name=f"{name} (归一化)", line=dict(color="#f59e0b", width=2),
     ))
 
     # MAs
@@ -75,10 +75,10 @@ def render() -> None:
         with c1:
             symbol = st.text_input("输入股票代码", placeholder="例如: TSLA.US, 600519.SH, 00700.HK")
         with c2:
-            count = st.selectbox("K线数�?, [120, 250, 500, 1000], index=1)
+            count = st.selectbox("K线数量", [120, 250, 500, 1000], index=1)
 
     if not symbol.strip():
-        st.info("👆 请在上方输入股票代码开始分�?)
+        st.info("👆 请在上方输入股票代码开始分析")
         return
 
     symbol = symbol.strip().upper()
@@ -106,10 +106,10 @@ def render() -> None:
         change_str = f"{change:+.2f}" if change is not None else "-"
         pct_str = f"{pct:+.2f}%" if pct is not None else "-"
         cols[1].metric("涨跌", change_str, pct_str)
-        cols[2].metric("开�?, f"{q.open:.2f}" if q.open else "-")
-        cols[3].metric("最�?, f"{q.high:.2f}" if q.high else "-")
-        cols[4].metric("最�?, f"{q.low:.2f}" if q.low else "-")
-        cols[5].metric("成交�?, f"{q.volume:,.0f}" if q.volume else "-")
+        cols[2].metric("开盘", f"{q.open:.2f}" if q.open else "-")
+        cols[3].metric("最高", f"{q.high:.2f}" if q.high else "-")
+        cols[4].metric("最低", f"{q.low:.2f}" if q.low else "-")
+        cols[5].metric("成交量", f"{q.volume:,.0f}" if q.volume else "-")
 
     # ── K线图 ──
     if result.bars:
@@ -119,10 +119,10 @@ def render() -> None:
     # ── 指标网格 & 风险面板 ──
     c1, c2 = st.columns([1, 1])
     with c1:
-        st.subheader("技术指�?)
+        st.subheader("技术指标")
         if result.indicators:
             indf = pd.DataFrame(
-                [{"指标": k, "数�?: f"{v:.2f}" if isinstance(v, float) else str(v)} for k, v in result.indicators.items()]
+                [{"指标": k, "数值": f"{v:.2f}" if isinstance(v, float) else str(v)} for k, v in result.indicators.items()]
             )
             st.dataframe(indf, use_container_width=True, hide_index=True)
 

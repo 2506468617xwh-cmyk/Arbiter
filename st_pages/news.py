@@ -1,4 +1,4 @@
-"""新闻雷达 �?新闻检索、筛选与详情"""
+"""新闻雷达 — 新闻检索、筛选与详情"""
 from __future__ import annotations
 
 import streamlit as st
@@ -29,9 +29,9 @@ def render() -> None:
         with c1:
             market = st.selectbox("市场", ["ALL", "CN", "US", "HK", "GLOBAL"])
         with c2:
-            topic = st.text_input("主题", placeholder="可�?)
+            topic = st.text_input("主题", placeholder="可选")
         with c3:
-            symbol = st.text_input("股票代码", placeholder="可�?)
+            symbol = st.text_input("股票代码", placeholder="可选")
         with c4:
             limit = st.slider("条数", 10, 100, 50)
 
@@ -56,10 +56,10 @@ def render() -> None:
             st.error(f"加载新闻失败：{exc}")
             return
 
-    # ── 搜索�?──
-    keyword = st.text_input("🔍 关键词搜�?, key="_news_keyword", placeholder="输入关键词后按回�?)
+    # ── 搜索框 ──
+    keyword = st.text_input("🔍 关键词搜索", key="_news_keyword", placeholder="输入关键词后按回车")
     if keyword.strip():
-        with st.spinner("搜索�?.."):
+        with st.spinner("搜索中..."):
             try:
                 result = search_news(keyword.strip(), limit=limit)
             except Exception as exc:
@@ -70,14 +70,14 @@ def render() -> None:
         st.info("暂无新闻数据")
         return
 
-    st.caption(f"�?{result.count} �? |  最后更新：{result.last_update}")
+    st.caption(f"共 {result.count} 条  |  最后更新：{result.last_update}")
 
     # ── 新闻列表 ──
     for item in result.items:
         with st.container():
             c1, c2 = st.columns([5, 1])
             with c1:
-                title = item.title or "(无标�?"
+                title = item.title or "(无标题)"
                 if item.url:
                     st.markdown(f"**[{title}]({item.url})**")
                 else:
