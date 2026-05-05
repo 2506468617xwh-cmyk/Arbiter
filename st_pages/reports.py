@@ -1,9 +1,9 @@
-"""报告库 — 研究报告浏览与管理"""
+"""报告�?�?研究报告浏览与管�?""
 from __future__ import annotations
 
 import streamlit as st
 
-from streamlit.utils import ROOT
+from st_pages.utils import ROOT
 import sys
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
@@ -18,7 +18,7 @@ def _format_size(size_bytes: int) -> str:
 
 
 def render() -> None:
-    st.title("📚 报告库")
+    st.title("📚 报告�?)
 
     try:
         from backend.services.report_service import list_reports, get_report, get_latest_report, delete_report
@@ -35,14 +35,14 @@ def render() -> None:
             return
 
     if not reports_list.reports:
-        st.info("报告库为空。前往「研究生成」页面创建第一份报告。")
+        st.info("报告库为空。前往「研究生成」页面创建第一份报告�?)
         return
 
-    # ── 左侧：报告列表 ──
+    # ── 左侧：报告列�?──
     c1, c2 = st.columns([1, 2])
 
     with c1:
-        st.subheader(f"共 {len(reports_list.reports)} 份报告")
+        st.subheader(f"�?{len(reports_list.reports)} 份报�?)
 
         selected_file = st.selectbox(
             "选择报告",
@@ -50,15 +50,15 @@ def render() -> None:
             format_func=lambda f: next((r.title for r in reports_list.reports if r.filename == f), f),
         )
 
-        if st.button("📄 查看最新报告", use_container_width=True):
+        if st.button("📄 查看最新报�?, use_container_width=True):
             try:
                 latest = get_latest_report()
                 selected_file = latest.filename
                 st.rerun()
             except Exception:
-                st.warning("暂无最新报告")
+                st.warning("暂无最新报�?)
 
-    # ── 右侧：报告内容 ──
+    # ── 右侧：报告内�?──
     with c2:
         if selected_file:
             with st.spinner("加载报告..."):
@@ -80,7 +80,7 @@ def render() -> None:
                 st.markdown(report.content)
 
                 # 删除按钮
-                with st.expander("🗑️ 删除此报告"):
+                with st.expander("🗑�?删除此报�?):
                     if st.button("确认删除", type="secondary"):
                         try:
                             delete_result = delete_report(selected_file)

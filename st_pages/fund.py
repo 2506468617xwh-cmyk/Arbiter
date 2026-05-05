@@ -1,10 +1,10 @@
-"""基金 ETF 分析 — 基金深度研究"""
+"""基金 ETF 分析 �?基金深度研究"""
 from __future__ import annotations
 
 import streamlit as st
 import pandas as pd
 
-from streamlit.utils import ROOT
+from st_pages.utils import ROOT
 import sys
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
@@ -20,7 +20,7 @@ def render() -> None:
         count = st.selectbox("数据条数", [120, 250, 500], index=1)
 
     if not symbol.strip():
-        st.info("👆 请在输入基金代码开始分析")
+        st.info("👆 请在输入基金代码开始分�?)
         return
 
     symbol = symbol.strip().upper()
@@ -43,11 +43,11 @@ def render() -> None:
         q = result.quote
         cols = st.columns(6)
         cols[0].metric("最新价", f"{q.last_price:.2f}" if q.last_price else "-")
-        cols[1].metric("净值 NAV", f"{q.nav:.4f}" if q.nav else "-")
+        cols[1].metric("净�?NAV", f"{q.nav:.4f}" if q.nav else "-")
         premium = q.premium_discount
-        cols[2].metric("溢价率", f"{premium:.2f}%" if premium is not None else "-")
-        cols[3].metric("成交量", f"{q.volume:,.0f}" if q.volume else "-")
-        cols[4].metric("成交额", f"{q.turnover:,.0f}" if q.turnover else "-")
+        cols[2].metric("溢价�?, f"{premium:.2f}%" if premium is not None else "-")
+        cols[3].metric("成交�?, f"{q.volume:,.0f}" if q.volume else "-")
+        cols[4].metric("成交�?, f"{q.turnover:,.0f}" if q.turnover else "-")
         cols[5].metric("类型", result.fund_type or "-")
 
     # ── 基金信息 ──
@@ -58,11 +58,11 @@ def render() -> None:
             cols[0].metric("基金公司", info.fund_company or "-")
             cols[1].metric("资产类别", info.asset_class or "-")
             cols[2].metric("成立日期", info.inception_date or "-")
-            cols[3].metric("费用率", f"{info.expense_ratio:.4f}%" if info.expense_ratio else "-")
+            cols[3].metric("费用�?, f"{info.expense_ratio:.4f}%" if info.expense_ratio else "-")
             cols[0].metric("管理规模", f"{info.aum:,.0f}" if info.aum else "-")
             cols[1].metric("基准", info.benchmark or "-")
 
-    # ── NAV 走势图 ──
+    # ── NAV 走势�?──
     if result.bars:
         import plotly.graph_objects as go
         df = pd.DataFrame(result.bars)
@@ -73,7 +73,7 @@ def render() -> None:
         first_val = df[close_col].dropna().iloc[0] if len(df[close_col].dropna()) else 1
         fig.add_trace(go.Scatter(
             x=df["date"], y=df[close_col] / first_val * 100,
-            mode="lines", name=f"{result.name or symbol} 归一化",
+            mode="lines", name=f"{result.name or symbol} 归一�?,
             line=dict(color="#f59e0b", width=2),
         ))
 
@@ -101,7 +101,7 @@ def render() -> None:
     with c2:
         st.subheader("配置 & 定投")
         st.markdown(f"**配置分析**\n{result.allocation_summary or '_暂无_'}")
-        st.markdown(f"**流动性**\n{result.liquidity_summary or '_暂无_'}")
+        st.markdown(f"**流动�?*\n{result.liquidity_summary or '_暂无_'}")
         st.markdown(f"**定投建议**\n{result.dca_summary or '_暂无_'}")
 
     if result.research_summary:

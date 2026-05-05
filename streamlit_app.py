@@ -10,8 +10,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from streamlit.utils import init_state, PAGE_KEYS, PAGE_LABELS, PAGE_ICONS
-from streamlit import home, dashboard, stock, fund, macro, news, ai_research, reports
+from st_pages.utils import init_state, PAGE_KEYS, PAGE_LABELS, PAGE_ICONS
+from st_pages import home, dashboard, stock, fund, macro, news, ai_research, reports
 
 init_state()
 

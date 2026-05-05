@@ -30,13 +30,13 @@ PAGE_KEYS = [
 
 PAGE_LABELS = {
     "home": "首页 Home",
-    "dashboard": "市场热力榜 Heatmap",
+    "dashboard": "市场热力�?Heatmap",
     "stock": "个股分析 Stocks",
     "fund": "基金 ETF Funds",
     "macro": "宏观研究 Macro",
     "news": "新闻雷达 News",
     "ai_research": "AI 研究 AI Research",
-    "reports": "报告库 Reports",
+    "reports": "报告�?Reports",
 }
 
 PAGE_ICONS = {
