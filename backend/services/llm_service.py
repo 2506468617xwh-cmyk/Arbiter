@@ -181,7 +181,7 @@ def _pet_fallback(request: PetSummaryRequest, warnings: list[str] | None = None)
         asset_symbol=None,
         symbols=[],
         context=context,
-        warnings=warnings or ["小白狗未调用大模型，已返回规则型一句话。"],
+        warnings=warnings or ["汉堡未调用大模型，已返回规则型一句话。"],
     )
 
 
@@ -197,7 +197,7 @@ def generate_pet_summary(request: PetSummaryRequest) -> LLMResponse:
     try:
         from RAbot.llm.llm_client import RAbotLLMClient
     except Exception as exc:
-        return _pet_fallback(request, [f"小白狗 LLM 客户端导入失败：{type(exc).__name__}: {exc}"])
+        return _pet_fallback(request, [f"汉堡 LLM 客户端导入失败：{type(exc).__name__}: {exc}"])
 
     client = RAbotLLMClient(max_tokens=120, temperature=0.2)
     if not client.is_available():
@@ -212,16 +212,16 @@ def generate_pet_summary(request: PetSummaryRequest) -> LLMResponse:
     else:
         user_prompt = (
             "请基于当前页面信息，用中文输出一句不超过80字的总结。"
-            "你是 RAbot 的小白狗，只用一句话告诉用户这一页最值得关注的变化。"
+            "你是 RAbot 的汉堡，只用一句话告诉用户这一页最值得关注的变化。"
         )
 
     try:
         result = client.generate(
-            system_prompt="你是 RAbot 的小白狗研究助手。只输出一句中文，最多80字，不给买卖建议，不编造缺失数据。",
+            system_prompt="你是 RAbot 的汉堡研究助手。只输出一句中文，最多80字，不给买卖建议，不编造缺失数据。",
             user_prompt=f"{user_prompt}\n\n页面：{request.page_name}\n\n上下文：\n{context_text}",
         )
     except Exception as exc:
-        return _pet_fallback(request, [f"小白狗 LLM 调用失败：{type(exc).__name__}: {exc}"])
+        return _pet_fallback(request, [f"汉堡 LLM 调用失败：{type(exc).__name__}: {exc}"])
 
     if result.ok and result.text.strip():
         return LLMResponse(
@@ -234,7 +234,7 @@ def generate_pet_summary(request: PetSummaryRequest) -> LLMResponse:
             context=context,
             warnings=[],
         )
-    return _pet_fallback(request, [f"小白狗 LLM 未返回有效结果：{result.error or result.text}"])
+    return _pet_fallback(request, [f"汉堡 LLM 未返回有效结果：{result.error or result.text}"])
 
 
 def _to_response(result: Any, *, scope: str, asset_symbol: str | None, symbols: list[str]) -> LLMResponse:

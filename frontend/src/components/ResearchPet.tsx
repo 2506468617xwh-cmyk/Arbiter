@@ -12,7 +12,7 @@ function Pup() {
   return (
     <img
       className="rabot-pup-img"
-      src="/girl.png"
+      src="/hanbao.png"
       alt="RAbot 小助手"
       draggable={false}
     />
