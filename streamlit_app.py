@@ -75,7 +75,21 @@ CORE_CSS = f"""
     .stButton>button[kind="primary"]:hover {{ background: var(--brand-hover) !important; }}
     .stButton>button[kind="secondary"] {{ border:1px solid var(--ctrl-border) !important; background: var(--panel) !important; color: var(--ink) !important; }}
     hr {{ border-color: var(--line) !important; }}
-    .stTextInput>div>div>input, .stSelectbox>div>div>div {{ border-color: var(--ctrl-border) !important; color: var(--ink) !important; }}
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stMultiSelect>div>div>div {{ border-color:var(--ctrl-border)!important; color:var(--ink)!important; background:var(--panel)!important; }}
+    .stSelectbox [data-baseweb="popover"] li, .stMultiSelect [data-baseweb="popover"] li {{ color:var(--ink)!important; }}
+    .stSelectbox [data-baseweb="popover"] li:hover, .stMultiSelect [data-baseweb="popover"] li:hover {{ background:var(--nav-hover)!important; }}
+    .stSelectbox [data-baseweb="popover"], .stMultiSelect [data-baseweb="popover"] {{ background:var(--panel)!important; border-color:var(--line)!important; }}
+    div[data-baseweb="select"] svg, div[data-baseweb="select"] path {{ stroke:var(--muted)!important; }}
+    input[aria-autocomplete="list"] {{ color:var(--ink)!important; }}
+    .stSlider>div>div>div>div {{ background:var(--brand)!important; }}
+    .stRadio>div {{ gap:4px; }}
+    .stRadio label {{ color:var(--ink)!important; }}
+    .stRadio [data-testid="stMarkdownContainer"] p {{ color:var(--ink)!important; }}
+    .stCheckbox label {{ color:var(--ink)!important; }}
+    .stExpander {{ border:1px solid var(--line)!important; border-radius:10px!important; background:var(--panel)!important; }}
+    .stExpander summary {{ color:var(--ink)!important; }}
+    .stExpander [data-testid="stExpanderDetails"] {{ color:var(--ink)!important; }}
+    .stAlert {{ border-radius:10px!important; }}
     .stDataFrame {{ border:1px solid var(--line); border-radius:10px; }}
     .rabot-card {{ border:1px solid var(--line); border-radius:14px; padding:1rem 1.2rem; background:var(--panel); box-shadow:var(--shadow); margin-bottom:.6rem; transition:box-shadow .2s; }}
     .rabot-card:hover {{ box-shadow: 0 22px 48px rgba(0,0,0,.12); }}
@@ -148,21 +162,67 @@ THEME_LABELS = {"warm": "默认暖色", "white-red": "白+红", "black-blue": "�
 def _fmt_pct(v): return f"{v:+.2f}%" if v is not None else "-"
 
 TAG_CN = {
-    "AI": "人工智能", "chips": "芯片", "semiconductor": "半导体",
-    "Federal Reserve": "美联储", "inflation": "通胀", "interest rate": "利率",
-    "China economy": "中国经济", "Hong Kong stocks": "港股", "A shares": "A股",
-    "US stocks": "美股", "macro": "宏观", "commodity": "商品", "forex": "外汇",
-    "crypto": "加密货币", "energy": "能源", "tech": "科技", "earnings": "财报",
-    "trade": "贸易", "policy": "政策", "real estate": "房地产", "employment": "就业",
-    "GDP": "GDP", "manufacturing": "制造业", "services": "服务业", "PMI": "PMI",
-    "bond": "债券", "equity": "权益", "volatility": "波动率", "risk": "风险",
+    # 科技 & AI
+    "AI": "人工智能", "chips": "芯片", "semiconductor": "半导体", "NVIDIA": "英伟达",
+    "Apple": "苹果", "Tesla": "特斯拉", "Microsoft": "微软", "Google": "谷歌",
+    "Meta": "Meta", "Amazon": "亚马逊", "tech": "科技", "software": "软件",
+    "hardware": "硬件", "cloud": "云计算", "cyber": "网络安全", "robotics": "机器人",
+    "EV": "电动车", "autonomous driving": "自动驾驶", "battery": "电池",
+    # 宏观
+    "Federal Reserve": "美联储", "Fed": "美联储", "ECB": "欧央行", "PBOC": "央行",
+    "inflation": "通胀", "CPI": "CPI", "PPI": "PPI", "deflation": "通缩",
+    "interest rate": "利率", "rate cut": "降息", "rate hike": "加息",
+    "monetary policy": "货币政策", "fiscal policy": "财政政策",
+    "GDP": "GDP", "PMI": "PMI", "NFP": "非农", "unemployment": "失业率",
+    "employment": "就业", "jobless claims": "失业金", "wages": "工资",
+    "manufacturing": "制造业", "services": "服务业", "retail sales": "零售",
+    "trade": "贸易", "trade war": "贸易战", "tariff": "关税", "sanction": "制裁",
+    "supply chain": "供应链", "export": "出口", "import": "进口",
+    "geopolitics": "地缘政治", "war": "战争", "conflict": "冲突",
+    "election": "大选", "Trump": "特朗普", "Biden": "拜登",
+    # 中国市场
+    "China": "中国", "China economy": "中国经济", "A shares": "A股",
+    "CSI 300": "沪深300", "SSE": "上交所", "SZSE": "深交所",
+    "Hang Seng": "恒生", "Hong Kong stocks": "港股", "CNY": "人民币",
+    "Chinese tech": "中国科技", "property market": "房市", "Evergrande": "恒大",
+    # 美股
+    "US stocks": "美股", "S&P 500": "标普500", "Nasdaq": "纳斯达克",
+    "Dow Jones": "道琼斯", "Wall Street": "华尔街", "USD": "美元",
+    # 资产
+    "equity": "权益", "bond": "债券", "Treasury": "美债", "yield": "收益率",
+    "yield curve": "收益率曲线", "credit": "信用债", "junk bond": "垃圾债",
+    "commodity": "商品", "oil": "原油", "crude": "原油", "OPEC": "OPEC",
+    "gold": "黄金", "silver": "白银", "copper": "铜", "lithium": "锂",
+    "iron ore": "铁矿石", "steel": "钢铁", "natural gas": "天然气",
+    "forex": "外汇", "crypto": "加密货币", "Bitcoin": "比特币", "Ethereum": "以太坊",
+    # 策略
     "bullish": "看涨", "bearish": "看跌", "neutral": "中性",
+    "volatility": "波动率", "VIX": "VIX恐慌", "risk": "风险", "risk-off": "避险",
+    "risk-on": "风险偏好", "correction": "回调", "rallie": "反弹", "crash": "暴跌",
+    "bubble": "泡沫", "recession": "衰退", "soft landing": "软着陆",
+    "bull market": "牛市", "bear market": "熊市",
+    # 行业
+    "energy": "能源", "healthcare": "医疗", "pharma": "制药", "biotech": "生物科技",
+    "finance": "金融", "bank": "银行", "insurance": "保险", "fintech": "金融科技",
+    "real estate": "房地产", "housing": "房产", "REITs": "REITs",
+    "consumer": "消费", "luxury": "奢侈品", "retail": "零售",
+    "auto": "汽车", "aerospace": "航天", "defense": "国防", "infrastructure": "基建",
+    "telecom": "电信", "media": "传媒", "entertainment": "娱乐", "gaming": "游戏",
+    # 公司事件
+    "earnings": "财报", "earnings report": "财报", "revenue": "营收",
+    "profit": "利润", "guidance": "业绩指引", "IPO": "上市", "M&A": "并购",
+    "buyback": "回购", "dividend": "分红", "split": "拆股",
+    "layoff": "裁员", "restructuring": "重组", "bankruptcy": "破产",
+    "investigation": "调查", "fine": "罚款", "lawsuit": "诉讼",
+    "regulation": "监管", "antitrust": "反垄断", "compliance": "合规",
+    # 基金/ETF
+    "ETF": "ETF", "fund": "基金", "mutual fund": "共同基金",
+    "hedge fund": "对冲基金", "pension": "养老金", "sovereign fund": "主权基金",
+    # 其他
+    "market": "市场", "economy": "经济", "global": "全球", "Asia": "亚洲",
+    "Europe": "欧洲", "Japan": "日本", "emerging market": "新兴市场",
     "CN": "中国", "US": "美国", "HK": "香港", "GLOBAL": "全球",
-    "market": "市场", "economy": "经济", "rate cut": "降息", "rate hike": "加息",
-    "oil": "原油", "gold": "黄金", "housing": "房地产", "consumer": "消费",
-    "regulation": "监管", "sanction": "制裁", "tariff": "关税", "geopolitics": "地缘",
-    "earnings report": "财报", "IPO": "上市", "M&A": "并购", "buyback": "回购",
-    "dividend": "分红", "ETF": "ETF", "fund": "基金",
+    "JP": "日本", "EU": "欧洲", "EM": "新兴市场",
 }
 def _tag_cn(tag: str) -> str:
     return TAG_CN.get(tag, tag)
