@@ -1,3 +1,5 @@
+import os
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -5,6 +7,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+
+HERE = Path(__file__).resolve().parent
+PROJECT_DIR = HERE.parent
+FRONTEND_DIST = PROJECT_DIR / "frontend" / "dist"
+
+# Make src/RAbot importable regardless of PYTHONPATH / cwd
+sys.path.insert(0, str(PROJECT_DIR / "src"))
 
 from backend.api.funds import router as funds_router
 from backend.api.institute import router as institute_router
@@ -21,12 +30,6 @@ from backend.api.system import router as system_router
 from backend.api.tasks import router as tasks_router
 from backend.services.update_service import update_service
 from RAbot.settings import get_data_dir
-import os
-
-
-HERE = Path(__file__).resolve().parent
-PROJECT_DIR = HERE.parent
-FRONTEND_DIST = PROJECT_DIR / "frontend" / "dist"
 
 
 class UTF8JSONResponse(JSONResponse):

@@ -37,6 +37,10 @@ tmp/
 temp/
 *.tmp
 
+# Generated packaging
+*.egg-info/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/
+.vite/
