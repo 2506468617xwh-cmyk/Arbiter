@@ -114,7 +114,7 @@ export default function App() {
               {mounted.has("markets") && <MarketsPage useLlm={useLlm} language={language} />}
             </PageSlot>
             <PageSlot show={tab === "watchlist"}>
-              {mounted.has("watchlist") && <WatchlistPage useLlm={useLlm} />}
+              {mounted.has("watchlist") && <WatchlistPage />}
             </PageSlot>
             <PageSlot show={tab === "news"}>
               {mounted.has("news") && <NewsPage />}
