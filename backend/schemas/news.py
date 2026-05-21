@@ -19,6 +19,7 @@ class NewsItem(BaseModel):
     topics: list[str] = Field(default_factory=list)
     symbols: list[str] = Field(default_factory=list)
     summary: Optional[str] = None
+    language: Optional[str] = None
 
 
 class NewsDetailResponse(NewsItem):

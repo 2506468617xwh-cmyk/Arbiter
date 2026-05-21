@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+﻿import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   MacroAnalysisResponse,
   MacroSnapshotItem,
@@ -10,7 +10,6 @@ import {
 import DataTable from "../components/DataTable";
 import MacroLineChart from "../components/MacroLineChart";
 import MetricCard from "../components/MetricCard";
-import ResearchPet from "../components/ResearchPet";
 import { useI18n } from "../i18n";
 
 function fmt(value: number | null | undefined): string {
@@ -111,18 +110,6 @@ function MacroResearchPage({ useLlm }: { useLlm: boolean }) {
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">{page.macro.subtitle}</p>
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
-          <ResearchPet
-            pageName="macro"
-            useLlm={useLlm}
-            context={{
-              title: page.macro.title,
-              subtitle: page.macro.subtitle,
-              selected_symbols: selected,
-              latest_date: latestDate,
-              indicator_count: snapshot.length,
-              warnings
-            }}
-          />
           <button className="primary-button" onClick={loadSnapshot} disabled={loading}>{loading ? copy.refreshing : copy.refresh}</button>
         </div>
       </div>
@@ -143,11 +130,11 @@ function MacroResearchPage({ useLlm }: { useLlm: boolean }) {
 
       <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
         <div className="grid gap-4 md:grid-cols-[180px_220px_auto]">
-          <select className="rounded-lg border border-line bg-white px-3 py-2 text-sm" value={region} onChange={(event) => setRegion(event.target.value)}>
+          <select className="rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" value={region} onChange={(event) => setRegion(event.target.value)}>
             <option value="">{copy.allRegions}</option>
             {regions.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select className="rounded-lg border border-line bg-white px-3 py-2 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <select className="rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
             <option value="">{copy.allCategories}</option>
             {categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
@@ -157,7 +144,7 @@ function MacroResearchPage({ useLlm }: { useLlm: boolean }) {
           {snapshot.slice(0, 30).map((item) => (
             <button
               key={item.symbol}
-              className={`rounded-full border px-3 py-1 text-xs ${selected.includes(item.symbol) ? "border-brand bg-[#fff7ed] text-brand" : "border-line bg-[#fffaf2] text-muted"}`}
+              className={`rounded-full border px-3 py-1 text-xs ${selected.includes(item.symbol) ? "border-brand bg-[var(--accent-soft)] text-brand" : "border-line bg-[var(--bg-card)] text-muted"}`}
               onClick={() => toggleSymbol(item.symbol)}
             >
               {item.name || item.symbol}
@@ -189,11 +176,11 @@ function MacroResearchPage({ useLlm }: { useLlm: boolean }) {
           <span className="text-xs text-muted">{useLlm ? copy.llmOn : copy.llmOff}</span>
         </div>
         <form className="mt-4 space-y-3" onSubmit={submitQuestion}>
-          <textarea className="min-h-24 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand" value={question} onChange={(event) => setQuestion(event.target.value)} />
+          <textarea className="min-h-24 w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm leading-6 outline-none focus:border-brand" value={question} onChange={(event) => setQuestion(event.target.value)} />
           <div className="flex justify-end"><button className="primary-button" disabled={chatLoading}>{chatLoading ? copy.analyzing : copy.submit}</button></div>
         </form>
         {answer ? (
-          <div className="mt-4 rounded-lg border border-line bg-[#fffdf8] p-4">
+          <div className="mt-4 rounded-lg border border-line bg-[var(--bg-elevated)] p-4">
             <p className="whitespace-pre-wrap text-sm leading-7 text-muted">{answer.text}</p>
           </div>
         ) : null}

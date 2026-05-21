@@ -1,4 +1,4 @@
-import { TaskResponse } from "../api/client";
+﻿import { TaskResponse } from "../api/client";
 import ProgressBar from "./ProgressBar";
 
 interface TaskStatusCardProps {
@@ -42,7 +42,7 @@ function TaskStatusCard({ task }: TaskStatusCardProps) {
               ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-800"
               : isFailed
                 ? "rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900"
-                : "rounded-full border border-line bg-[#f8efe4] px-3 py-1 text-xs text-muted"
+                : "rounded-full border border-line bg-[var(--bg-card)] px-3 py-1 text-xs text-muted"
           }
         >
           {statusText(task.status)}

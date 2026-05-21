@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   MarketPerformanceItem,
   MultiAssetResponse,
@@ -74,10 +74,10 @@ function MultiAssetPage({ useLlm }: { useLlm: boolean }) {
         <div className="grid gap-4 lg:grid-cols-[1fr_160px_160px_auto]">
           <div className="space-y-2">
             <span className="text-sm font-medium text-ink">资产库多选</span>
-            <div className="max-h-36 overflow-auto rounded-lg border border-line bg-white p-2">
+            <div className="max-h-36 overflow-auto rounded-lg border border-line bg-[var(--bg-card)] p-2">
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {(assets.length ? assets : defaultSymbols.map((symbol) => ({ symbol, name: symbol } as MarketPerformanceItem))).map((asset) => (
-                  <label key={asset.symbol} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[#fff4e4]">
+                  <label key={asset.symbol} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-[var(--bg-card-hover)]">
                     <input type="checkbox" checked={selected.includes(asset.symbol)} onChange={() => toggleSymbol(asset.symbol)} />
                     <span className="font-medium text-ink">{asset.symbol}</span>
                     <span className="truncate text-muted">{asset.name ?? asset.symbol}</span>
@@ -88,11 +88,11 @@ function MultiAssetPage({ useLlm }: { useLlm: boolean }) {
           </div>
           <label className="space-y-2 text-sm">
             <span className="font-medium text-ink">开始日期</span>
-            <input className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" type="date" value={start} onChange={(event) => setStart(event.target.value)} />
+            <input className="w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" type="date" value={start} onChange={(event) => setStart(event.target.value)} />
           </label>
           <label className="space-y-2 text-sm">
             <span className="font-medium text-ink">结束日期</span>
-            <input className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" type="date" value={end} onChange={(event) => setEnd(event.target.value)} />
+            <input className="w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" type="date" value={end} onChange={(event) => setEnd(event.target.value)} />
           </label>
           <div className="flex items-end">
             <button className="primary-button w-full" onClick={load} disabled={!symbols.length}>刷新对比</button>

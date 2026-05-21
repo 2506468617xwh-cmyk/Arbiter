@@ -1,4 +1,4 @@
-import { NewsCollectResponse, NewsItem } from "../api/client";
+﻿import { NewsCollectResponse, NewsItem } from "../api/client";
 
 interface NewsSourcePanelProps {
   items: NewsItem[];
@@ -22,7 +22,7 @@ function NewsSourcePanel({ items, collectResult }: NewsSourcePanelProps) {
           const saved = typeof value === "number" ? value : value.saved ?? 0;
           const warnings = typeof value === "number" ? [] : value.warnings ?? [];
           return (
-            <div key={name} className="rounded-lg border border-line bg-[#fffdf8] p-3">
+            <div key={name} className="rounded-lg border border-line bg-[var(--bg-elevated)] p-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-ink">{name}</p>
                 <p className="text-xs text-muted">{typeof value === "number" ? `${fetched} 条` : `抓取 ${fetched} / 入库 ${saved}`}</p>

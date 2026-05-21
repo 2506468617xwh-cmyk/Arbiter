@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import {
   deleteReport,
   fetchLatestReport,
@@ -156,8 +156,8 @@ function printReportAsPdf(report: ReportContentResponse): boolean {
     @page { margin: 18mm; }
     body {
       margin: 0;
-      color: #1f1a17;
-      background: #fffaf3;
+      color: var(--ink-primary);
+      background: var(--bg-card);
       font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
       line-height: 1.72;
     }
@@ -165,20 +165,20 @@ function printReportAsPdf(report: ReportContentResponse): boolean {
       max-width: 980px;
       margin: 0 auto;
       padding: 32px;
-      background: #fffdf8;
+      background: var(--bg-elevated);
     }
     .meta {
       margin: 6px 0 24px;
-      color: #74685c;
+      color: var(--ink-muted);
       font-size: 12px;
     }
     h1, h2, h3 {
-      color: #1f1a17;
+      color: var(--ink-primary);
       line-height: 1.35;
       page-break-after: avoid;
     }
     h1 { font-size: 28px; margin: 0 0 8px; }
-    h2 { font-size: 20px; margin: 28px 0 12px; border-bottom: 1px solid #eadfce; padding-bottom: 8px; }
+    h2 { font-size: 20px; margin: 28px 0 12px; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
     h3 { font-size: 16px; margin: 22px 0 10px; }
     p { margin: 10px 0; white-space: pre-wrap; }
     ul { margin: 10px 0 10px 22px; padding: 0; }
@@ -192,18 +192,18 @@ function printReportAsPdf(report: ReportContentResponse): boolean {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
-      background: #fff;
+      background: var(--bg-card);
     }
     th, td {
-      border: 1px solid #eadfce;
+      border: 1px solid var(--border-card);
       padding: 8px 10px;
       text-align: left;
       vertical-align: top;
       word-break: break-word;
     }
     th {
-      background: #f7efe4;
-      color: #4d3a2a;
+      background: var(--bg-card-hover);
+      color: var(--ink-secondary);
       font-weight: 700;
       white-space: nowrap;
       word-break: keep-all;
@@ -214,9 +214,9 @@ function printReportAsPdf(report: ReportContentResponse): boolean {
     figure {
       margin: 18px 0 24px;
       padding: 10px;
-      border: 1px solid #eadfce;
+      border: 1px solid var(--border-card);
       border-radius: 10px;
-      background: #fff;
+      background: var(--bg-card);
       page-break-inside: avoid;
     }
     figure img {
@@ -227,13 +227,13 @@ function printReportAsPdf(report: ReportContentResponse): boolean {
     }
     figcaption {
       margin-top: 8px;
-      color: #74685c;
+      color: var(--ink-muted);
       font-size: 12px;
       text-align: center;
     }
     @media print {
-      body { background: #fff; }
-      main { padding: 0; background: #fff; }
+      body { background: var(--bg-card); }
+      main { padding: 0; background: var(--bg-card); }
       .no-print { display: none; }
     }
   </style>
@@ -432,8 +432,8 @@ function ReportsPage({ onOpenResearch }: ReportsPageProps) {
                 return (
                   <article
                     key={report.filename}
-                    className={`px-4 py-4 transition hover:bg-[#f8efe4] ${
-                      isSelected ? "bg-[#fff4e6]" : ""
+                    className={`px-4 py-4 transition hover:bg-[var(--bg-card)] ${
+                      isSelected ? "bg-[var(--bg-card-hover)]" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">

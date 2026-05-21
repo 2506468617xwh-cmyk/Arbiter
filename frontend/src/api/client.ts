@@ -60,6 +60,7 @@ export interface NewsItem {
   topics: string[];
   symbols: string[];
   summary: string | null;
+  language: string | null;
 }
 
 export interface NewsDetailResponse extends NewsItem {
@@ -678,4 +679,121 @@ export function searchFunds(keyword: string): Promise<FundSearchResponse> {
 
 export async function askFundChat(payload: { symbol: string; question: string; use_llm: boolean }): Promise<LLMResponse> {
   return requestJsonPost<LLMResponse>("/api/funds/chat", payload);
+}
+
+// ── AI Market Intelligence (Narrative Engine) ──
+
+export interface MarketTheme {
+  name: string;
+  heat: number;
+  sentiment: string;
+  summary: string;
+  related_assets: string[];
+  affected_sectors: string[];
+  news_count: number;
+}
+
+export interface MarketNarrative {
+  headline: string;
+  body: string;
+  key_themes: string[];
+  risk_level: string;
+}
+
+export interface SentimentGauge {
+  overall: number;
+  ai_tech: number;
+  semiconductors: number;
+  macro_policy: number;
+  geopolitics: number;
+  risk_appetite: string;
+}
+
+export interface MarketEvent_ {
+  title: string;
+  impact: string;
+  direction: string;
+  affected_assets: string[];
+  ai_analysis: string;
+  published_at: string;
+}
+
+export interface AIBriefing {
+  title: string;
+  summary: string;
+  highlights: string[];
+  watch_today: string[];
+  key_risks: string[];
+}
+
+export interface NewsIntelligenceResponse {
+  narrative: MarketNarrative;
+  themes: MarketTheme[];
+  sentiment: SentimentGauge;
+  events: MarketEvent_[];
+  briefing: AIBriefing;
+  last_update: string;
+  news_count: number;
+  warnings: string[];
+}
+
+export function fetchNewsIntelligence(useLlm = true): Promise<NewsIntelligenceResponse> {
+  return requestJson<NewsIntelligenceResponse>(`/api/news/intelligence?use_llm=${useLlm}`);
+}
+
+// ── AI Institute ──
+
+export interface InstituteAnalysisResult {
+  symbol: string | null;
+  analyzed_at: string;
+  fundamental: {
+    评级: '利好' | '中性' | '利空';
+    核心结论: string;
+    关键指标: { 指标: string; 数值: string; 信号: '正面' | '中性' | '负面' }[];
+    风险提示: string;
+  };
+  technical: {
+    评级: '利好' | '中性' | '利空';
+    核心结论: string;
+    关键信号: { 信号: string; 含义: string }[];
+    关键价位: string;
+  };
+  sentiment: {
+    整体情绪: '乐观' | '中性' | '悲观';
+    散户情绪: '乐观' | '中性' | '悲观';
+    机构情绪: '乐观' | '中性' | '悲观';
+    情绪分歧: boolean;
+    核心结论: string;
+    主要风险标签: string[];
+    情绪风险提示: string;
+  };
+  bull: {
+    立场: '看多';
+    论据: { 序号: number; 来源: string; 论点: string; 依据: string }[];
+    做多信心: '高' | '中' | '低';
+    最大风险: string;
+  };
+  bear: {
+    立场: '看空';
+    论据: { 序号: number; 来源: string; 论点: string; 依据: string }[];
+    做空信心: '高' | '中' | '低';
+    最大阻力: string;
+  };
+  judge: {
+    裁决: '看多' | '看空' | '中性观望';
+    裁决强度: '强烈' | '适度' | '谨慎';
+    核心理由: string;
+    胜出论据: { 来源: string; 论点: string }[];
+    被否定论据: { 来源: string; 论点: string; 否定理由: string }[];
+    操作建议: { '短期（1-4周）': string; '中期（1-3月）': string; 风险控制: string };
+    免责声明: string;
+  };
+}
+
+export async function startInstituteAnalysis(symbol: string | null): Promise<TaskResponse> {
+  return requestJsonPost<TaskResponse>("/api/institute/analyze", { symbol });
+}
+
+export function fetchInstituteResult(taskId: string): Promise<TaskResultResponse> {
+  return requestJson<TaskResultResponse>(`/api/institute/result/${encodeURIComponent(taskId)}`);
 }

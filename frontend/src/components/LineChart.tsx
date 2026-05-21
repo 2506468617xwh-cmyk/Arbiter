@@ -1,4 +1,4 @@
-import { MouseEvent, TouchEvent, useMemo, useRef, useState } from "react";
+﻿import { MouseEvent, TouchEvent, useMemo, useRef, useState } from "react";
 import { MarketSeriesPoint } from "../api/client";
 
 interface LineChartProps {
@@ -15,8 +15,8 @@ interface ActivePoint {
 }
 
 const colors = ["#d97706", "#2563eb", "#16a34a", "#dc2626", "#7c3aed", "#0891b2", "#b45309"];
-const width = 920;
-const margin = { top: 20, right: 28, bottom: 48, left: 68 };
+const width = 780;
+const margin = { top: 14, right: 20, bottom: 34, left: 52 };
 const maxPointsPerSeries = 650;
 
 function formatValue(value: number | null, key: string): string {
@@ -45,7 +45,7 @@ function sampleSeries(series: MarketSeriesPoint[]): MarketSeriesPoint[] {
   return Array.from({ length: maxPointsPerSeries }, (_, index) => series[Math.round(index * step)]);
 }
 
-function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineChartProps) {
+function LineChart({ points, symbols, valueKey = "close", height = 260 }: LineChartProps) {
   const [active, setActive] = useState<ActivePoint | null>(null);
   const lastActiveDateRef = useRef<string | null>(null);
   const innerWidth = width - margin.left - margin.right;
@@ -104,7 +104,7 @@ function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineCh
   }, [innerHeight, innerWidth, prepared.dateIndex, prepared.dates.length, prepared.values]);
 
   if (!prepared.values.length) {
-    return <div className="rounded-lg border border-dashed border-line bg-panel p-6 text-sm text-muted">暂无可绘制走势数据。</div>;
+    return <div className="rounded-xl border border-dashed border-[var(--border-card)] bg-[var(--bg-card)] p-6 text-center text-sm text-[var(--ink-muted)]">暂无可绘制走势数据。</div>;
   }
 
   const updateActive = (clientX: number, svg: SVGSVGElement) => {
@@ -158,11 +158,11 @@ function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineCh
       ];
 
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
+    <section className="rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] p-4">
       <div className="relative overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[760px] touch-pan-y select-none"
+          className="min-w-[640px] touch-pan-y select-none"
           onMouseMove={handleMouseMove}
           onMouseLeave={clearActive}
           onClick={handleClick}
@@ -171,29 +171,29 @@ function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineCh
           role="img"
           aria-label="资产走势图"
         >
-          <rect x="0" y="0" width={width} height={height} fill="#fffdf9" />
+          <rect x="0" y="0" width={width} height={height} fill="var(--bg-card)" />
 
           {chart.ticks.map((tick) => {
             const y = chart.yFor(tick);
             return (
               <g key={tick}>
-                <line x1={margin.left} y1={y} x2={width - margin.right} y2={y} stroke="#eee4d6" />
-                <text x={margin.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#746b64">
+                <line x1={margin.left} y1={y} x2={width - margin.right} y2={y} stroke="var(--border-card)" />
+                <text x={margin.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">
                   {formatValue(tick, valueKey)}
                 </text>
               </g>
             );
           })}
 
-          <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="#cfc3b4" />
-          <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="#cfc3b4" />
+          <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="var(--border-card)" />
+          <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="var(--border-card)" />
 
           {xTickDates.map((date) => {
             const x = chart.xFor(date);
             return (
               <g key={date}>
-                <line x1={x} y1={height - margin.bottom} x2={x} y2={height - margin.bottom + 5} stroke="#cfc3b4" />
-                <text x={x} y={height - 18} textAnchor="middle" fontSize="11" fill="#746b64">
+                <line x1={x} y1={height - margin.bottom} x2={x} y2={height - margin.bottom + 5} stroke="var(--border-card)" />
+                <text x={x} y={height - 18} textAnchor="middle" fontSize="11" fill="var(--ink-muted)">
                   {date.slice(5)}
                 </text>
               </g>
@@ -214,10 +214,10 @@ function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineCh
 
           {active ? (
             <g>
-              <line x1={active.x} y1={margin.top} x2={active.x} y2={height - margin.bottom} stroke="#8b7b68" strokeDasharray="4 4" />
+              <line x1={active.x} y1={margin.top} x2={active.x} y2={height - margin.bottom} stroke="var(--ink-dim)" strokeDasharray="4 4" />
               {active.rows.map((row) =>
                 row.y === null ? null : (
-                  <circle key={row.symbol} cx={active.x} cy={row.y} r="4" fill={row.color} stroke="#fffdf9" strokeWidth="2" />
+                  <circle key={row.symbol} cx={active.x} cy={row.y} r="4" fill={row.color} stroke="var(--bg-card)" strokeWidth="2" />
                 )
               )}
             </g>
@@ -226,28 +226,28 @@ function LineChart({ points, symbols, valueKey = "close", height = 340 }: LineCh
 
         {active ? (
           <div
-            className="pointer-events-none absolute top-4 min-w-44 rounded-lg border border-line bg-panel p-3 text-xs shadow-soft"
+            className="pointer-events-none absolute top-4 min-w-44 rounded-xl border border-[var(--border-card)] bg-[var(--bg-elevated)] backdrop-blur-md p-3 text-xs shadow-lg"
             style={{ left: Math.min(Math.max(active.x - 18, 12), width - 220) }}
           >
-            <p className="font-semibold text-ink">{active.date}</p>
-            <div className="mt-2 space-y-1">
+            <p className="font-semibold text-[var(--ink-primary)]">{active.date}</p>
+            <div className="mt-2 space-y-1.5">
               {active.rows.map((row) => (
-                <p key={row.symbol} className="flex items-center justify-between gap-4 text-muted">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-2 w-3 rounded-full" style={{ background: row.color }} />
+                <p key={row.symbol} className="flex items-center justify-between gap-4 text-[var(--ink-secondary)]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-3 rounded-full" style={{ background: row.color }} />
                     {row.symbol}
                   </span>
-                  <span className="font-medium text-ink">{formatValue(row.value, valueKey)}</span>
+                  <span className="font-semibold text-[var(--ink-primary)]">{formatValue(row.value, valueKey)}</span>
                 </p>
               ))}
             </div>
           </div>
         ) : null}
       </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-[var(--ink-muted)]">
         {symbols.map((symbol, index) => (
-          <span key={symbol} className="inline-flex items-center gap-2">
-            <span className="h-2 w-5 rounded-full" style={{ background: colors[index % colors.length] }} />
+          <span key={symbol} className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-4 rounded-full" style={{ background: colors[index % colors.length] }} />
             {symbol}
           </span>
         ))}

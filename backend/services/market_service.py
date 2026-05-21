@@ -28,7 +28,11 @@ def _to_float(value: Any) -> float | None:
     if value is None:
         return None
     try:
-        return float(value)
+        f = float(value)
+        import math
+        if math.isnan(f) or math.isinf(f):
+            return None
+        return f
     except (TypeError, ValueError):
         return None
 

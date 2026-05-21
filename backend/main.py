@@ -7,10 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
 from backend.api.funds import router as funds_router
+from backend.api.institute import router as institute_router
 from backend.api.llm import router as llm_router
 from backend.api.macro import router as macro_router
 from backend.api.market import router as market_router
 from backend.api.news import router as news_router
+from backend.api.news_intelligence import router as news_intelligence_router
 from backend.api.overview import router as overview_router
 from backend.api.research import router as research_router
 from backend.api.reports import router as reports_router
@@ -77,11 +79,13 @@ def health() -> dict[str, object]:
 app.include_router(overview_router, prefix="/api")
 app.include_router(llm_router, prefix="/api")
 app.include_router(market_router, prefix="/api")
+app.include_router(news_intelligence_router, prefix="/api")
 app.include_router(news_router, prefix="/api")
 app.include_router(macro_router, prefix="/api")
 app.include_router(research_router, prefix="/api")
 app.include_router(stocks_router, prefix="/api")
 app.include_router(funds_router, prefix="/api")
+app.include_router(institute_router, prefix="/api")
 app.include_router(tasks_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(system_router, prefix="/api")

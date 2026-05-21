@@ -1,197 +1,160 @@
-import { useCallback, useEffect, useState } from "react";
-import { fetchOverview, OverviewResponse } from "../api/client";
-import MetricCard from "../components/MetricCard";
-import ResearchPet from "../components/ResearchPet";
-import SectionCard from "../components/SectionCard";
-import StatusPill from "../components/StatusPill";
-import { useI18n } from "../i18n";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Settings } from "lucide-react";
+import MarketOverview from "../components/MarketOverview";
+import AISummary from "../components/AISummary";
+import HotSectors from "../components/HotSectors";
+import TickerTape from "../components/TickerTape";
+import FlagIcon, { RegionKey, REGIONS } from "../components/FlagIcon";
+import { TabKey } from "../components/BottomNav";
+import { fetchOverview } from "../api/client";
 
 interface HomePageProps {
-  onOpenReports: () => void;
+  onNavigate?: (tab: TabKey) => void;
+  onOpenSettings?: () => void;
 }
 
-function HomePage({ onOpenReports }: HomePageProps) {
-  const { language, ui, page } = useI18n();
-  const [overview, setOverview] = useState<OverviewResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadOverview = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setOverview(await fetchOverview());
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "概览接口暂时不可用。");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadOverview();
-  }, [loadOverview]);
-
-  const englishSummary = (kind: "market" | "news" | "macro" | "report") => {
-    if (!overview) return "";
-    if (kind === "market") {
-      return `Loaded ${overview.market.count} market/index assets. Use the data as context, not as a forecast.`;
-    }
-    if (kind === "news") {
-      return `Loaded ${overview.news.count} local news items. Treat headlines as signals to verify, not conclusions.`;
-    }
-    if (kind === "macro") {
-      return `Loaded ${overview.macro.count} macro indicators. Macro data is a map, not a crystal ball.`;
-    }
-    return `There are ${overview.reports.count} saved reports in the local report library.`;
-  };
-
-  const summaryText = (kind: "market" | "news" | "macro" | "report", fallback: string | undefined) => {
-    if (language === "en") return englishSummary(kind);
-    return fallback || (
-      kind === "market" ? ui.noMarketSummary :
-      kind === "news" ? ui.noNewsSummary :
-      kind === "macro" ? ui.noMacroSummary :
-      ui.noReportSummary
-    );
-  };
-
+function SectionLabel({ children, live }: { children: React.ReactNode; live?: boolean }) {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-brand">{page.home.eyebrow}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-semibold text-ink">{page.home.title}</h1>
-            {overview ? <StatusPill status={overview.market_status} /> : null}
-          </div>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">{page.home.subtitle}</p>
-        </div>
-        <div className="flex flex-col items-start gap-3 md:items-end">
-          <ResearchPet
-            pageName="home"
-            context={{
-              title: page.home.title,
-              subtitle: page.home.subtitle,
-              market_summary: overview?.market_summary,
-              news_summary: overview?.news_summary,
-              macro_summary: overview?.macro_summary,
-              report_summary: overview?.report_summary
-            }}
-          />
-          <div className="flex flex-wrap gap-3">
-            <button className="secondary-button" onClick={loadOverview} disabled={loading}>
-              {loading ? ui.refreshing : ui.refreshOverview}
-            </button>
-            <button className="primary-button" onClick={onOpenReports}>
-              {ui.openReports}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 md:flex-row md:items-center md:justify-between">
-          <span>{error}</span>
-          <button className="secondary-button bg-white" onClick={loadOverview}>
-            {ui.retry}
-          </button>
-        </div>
-      ) : null}
-
-      {loading && !overview ? (
-        <div className="rounded-lg border border-line bg-panel p-5 text-sm text-muted shadow-soft">
-          {ui.loadingLocal}
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <MetricCard
-          label={ui.marketStatus}
-          value={overview?.market_status === "connected" ? ui.connected : ui.pending}
-          detail={language === "en" ? "Local research database status." : overview?.market_summary ?? "正在连接本地研究数据库。"}
-          tone={overview?.market_status === "connected" ? "positive" : "warning"}
-        />
-        <MetricCard
-          label={ui.indexCount}
-          value={String(overview?.market.count ?? 0)}
-          detail={ui.latestDisplayableMarket}
-        />
-        <MetricCard
-          label={ui.newsCount}
-          value={String(overview?.news.count ?? 0)}
-          detail={ui.localNewsSample}
-        />
-        <MetricCard
-          label={ui.macroCount}
-          value={String(overview?.macro.count ?? 0)}
-          detail={ui.latestMacroCoverage}
-        />
-        <MetricCard
-          label={ui.reportCount}
-          value={String(overview?.reports.count ?? 0)}
-          detail={language === "en" ? (overview?.reports.latest_title ? "Latest saved report" : ui.waitingForReport) : overview?.reports.latest_title ?? ui.waitingForReport}
-        />
-        <MetricCard
-          label={ui.lastUpdate}
-          value={overview ? new Date(overview.last_update).toLocaleTimeString() : "--:--"}
-          detail={overview ? new Date(overview.last_update).toLocaleDateString() : ui.waitingForApi}
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <SectionCard
-          title={ui.marketObservation}
-          count={overview?.market.count}
-          highlights={language === "en" ? [] : overview?.market.highlights}
-          warnings={overview?.market.warnings}
-        >
-          {summaryText("market", overview?.market_summary)}
-        </SectionCard>
-        <SectionCard
-          title={ui.newsRisk}
-          count={overview?.news.count}
-          highlights={language === "en" ? [] : overview?.news.highlights}
-          warnings={overview?.news.warnings}
-        >
-          {summaryText("news", overview?.news_summary)}
-        </SectionCard>
-        <SectionCard
-          title={ui.macroTemperature}
-          count={overview?.macro.count}
-          highlights={language === "en" ? [] : overview?.macro.highlights}
-          warnings={overview?.macro.warnings}
-        >
-          {summaryText("macro", overview?.macro_summary)}
-        </SectionCard>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard title={ui.reportStatus} count={overview?.reports.count}>
-          {summaryText("report", overview?.report_summary)}
-          {overview?.reports.latest_filename ? (
-            <p className="mt-2 break-all text-xs text-muted">
-              {ui.latestFile}: {overview.reports.latest_filename}
-            </p>
-          ) : null}
-        </SectionCard>
-        <SectionCard title={ui.dataNotes}>
-          {ui.dataNotesBody}
-        </SectionCard>
-      </div>
-
-      {overview?.warnings.length ? (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-sm font-semibold text-amber-950">提示</h2>
-          <ul className="mt-2 space-y-1 text-sm leading-6 text-amber-900">
-            {overview.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+    <div className="flex items-center gap-2 mb-3">
+      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--ink-muted)]">
+        {children}
+      </span>
+      <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+      {live && <div className="live-dot" />}
     </div>
   );
 }
 
-export default HomePage;
+export default function HomePage({ onNavigate, onOpenSettings }: HomePageProps) {
+  const [region, setRegion] = useState<RegionKey>("CN");
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchOverview()
+      .then((r) => {
+        if (r.last_update) {
+          setLastUpdate(new Date(r.last_update).toLocaleString("zh-CN", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="flex flex-col min-h-screen pb-28">
+      {/* Sticky header */}
+      <motion.header
+        className="sticky top-0 z-40 bg-[var(--bg-deep)]/95 backdrop-blur-md border-b border-[var(--border-subtle)] px-4 py-2.5"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[var(--accent-gradient)] flex items-center justify-center shadow-lg shadow-[var(--accent)]/20">
+              <span className="text-sm font-bold text-white">R</span>
+            </div>
+            <span className="text-base font-bold gradient-text tracking-tight">RAbot</span>
+            <button
+              className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-card)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink-primary)] active:scale-90 transition-all"
+              onClick={() => onOpenSettings?.()}
+            >
+              <Settings size={13} />
+            </button>
+          </div>
+
+          {/* Region toggle */}
+          <div className="flex gap-0.5 p-0.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-card)]">
+            {REGIONS.map(({ key, label }) => {
+              const isActive = region === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setRegion(key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 ${
+                    isActive
+                      ? "bg-[var(--accent)] text-white shadow-md"
+                      : "text-[var(--ink-muted)] hover:text-[var(--ink-secondary)]"
+                  }`}
+                >
+                  <FlagIcon region={key} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {lastUpdate && (
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--ink-muted)]">
+            <div className="live-dot" />
+            <span>数据更新于 {lastUpdate}</span>
+          </div>
+        )}
+      </motion.header>
+
+      {/* Ticker Tape */}
+      <TickerTape />
+
+      {/* Global Indexes */}
+      <section className="pt-4 pb-1">
+        <div className="px-4">
+          <SectionLabel live>全球指数</SectionLabel>
+        </div>
+        <MarketOverview region={region} />
+      </section>
+
+      {/* Market pulse */}
+      <section className="pt-2 pb-1">
+        <div className="px-4">
+          <SectionLabel>AI 市场脉搏</SectionLabel>
+        </div>
+        <AISummary />
+      </section>
+
+      {/* Hot sectors */}
+      <section className="pt-2 pb-1">
+        <div className="px-4">
+          <SectionLabel>热门板块</SectionLabel>
+        </div>
+        <HotSectors />
+      </section>
+
+      {/* Quick actions */}
+      <motion.section
+        className="px-4 pt-3 pb-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.25 }}
+      >
+        <SectionLabel>快捷研究</SectionLabel>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: "个股分析", desc: "财务 · 技术 · 估值", tab: "markets" as TabKey },
+            { label: "基金 ETF", desc: "费率 · 持仓 · 回撤", tab: "markets" as TabKey },
+            { label: "宏观研究", desc: "利率 · CPI · 就业", tab: "research" as TabKey },
+            { label: "AI 报告", desc: "自动生成研究简报", tab: "research" as TabKey },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] active:bg-[var(--bg-card-hover)] cursor-pointer transition-all hover:border-[var(--border-glow)] group"
+              onClick={() => onNavigate?.(item.tab)}
+            >
+              <div className="text-sm font-semibold text-[var(--ink-primary)] group-hover:text-[var(--accent)] transition-colors">
+                {item.label}
+              </div>
+              <div className="text-[11px] text-[var(--ink-muted)] mt-1">
+                {item.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+    </div>
+  );
+}

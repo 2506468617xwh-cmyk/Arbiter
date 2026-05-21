@@ -1,239 +1,271 @@
-import { useEffect, useState } from "react";
-import {
-  NewsCollectResponse,
-  NewsDetailResponse,
-  NewsItem,
-  collectNews,
-  fetchLatestNews,
-  fetchNewsBySymbol,
-  fetchNewsDetail,
-  searchNews
-} from "../api/client";
-import MetricCard from "../components/MetricCard";
-import NewsFilterBar from "../components/NewsFilterBar";
-import NewsItemCard from "../components/NewsItemCard";
-import NewsRiskTags from "../components/NewsRiskTags";
-import NewsSourcePanel from "../components/NewsSourcePanel";
-import PageIntro from "../components/PageIntro";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { RefreshCw, Search, Newspaper, X } from "lucide-react";
+import { fetchLatestNews, searchNews, collectNews, fetchNewsIntelligence, NewsItem, NewsCollectRequest, NewsIntelligenceResponse } from "../api/client";
+import MarketNarrative from "../components/MarketNarrative";
+import ThemeCards from "../components/ThemeCards";
+import SentimentGaugeView from "../components/SentimentGauge";
+import EventTimeline from "../components/EventTimeline";
 
-function score(value: number | null): string {
-  return value === null ? "--" : value.toFixed(0);
-}
+const TAG_CN: Record<string, string> = {
+  AI: "人工智能", chips: "芯片", semiconductor: "半导体", NVIDIA: "英伟达",
+  Apple: "苹果", Tesla: "特斯拉", "Federal Reserve": "美联储", Fed: "美联储",
+  inflation: "通胀", CPI: "CPI", "rate cut": "降息", "rate hike": "加息",
+  China: "中国", gold: "黄金", oil: "原油", crypto: "加密货币", Bitcoin: "比特币",
+  earnings: "财报", tech: "科技", EV: "电动车",
+};
 
-function dateText(value: string | null): string {
-  if (!value) return "--";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
+type Tab = "intelligence" | "feed";
 
-function NewsPage() {
-  const [items, setItems] = useState<NewsItem[]>([]);
-  const [selected, setSelected] = useState<NewsDetailResponse | null>(null);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [market, setMarket] = useState("ALL");
-  const [topic, setTopic] = useState("");
-  const [symbol, setSymbol] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [loadingList, setLoadingList] = useState(false);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+export default function NewsPage() {
+  const [tab, setTab] = useState<Tab>("intelligence");
+  const [intel, setIntel] = useState<NewsIntelligenceResponse | null>(null);
+  const [intelLoading, setIntelLoading] = useState(true);
+
+  const [allItems, setAllItems] = useState<NewsItem[]>([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [count, setCount] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState("");
   const [collecting, setCollecting] = useState(false);
-  const [collectResult, setCollectResult] = useState<NewsCollectResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [marketFilter, setMarketFilter] = useState<string>("ALL");
 
-  const openDetail = (id: string | number | null) => {
-    if (!id) return;
-    setError(null);
-    setLoadingDetail(true);
-    fetchNewsDetail(id)
-      .then(setSelected)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "新闻详情读取失败。"))
-      .finally(() => setLoadingDetail(false));
+  const [intelLoaded, setIntelLoaded] = useState(false);
+  const loadIntelligence = useCallback(async () => {
+    if (intelLoaded) return;
+    setIntelLoading(true);
+    try { setIntel(await fetchNewsIntelligence(true)); } catch {}
+    finally { setIntelLoading(false); setIntelLoaded(true); }
+  }, [intelLoaded]);
+
+  const loadFeed = useCallback(async () => {
+    setFeedLoading(true);
+    try {
+      const result = search.trim()
+        ? await searchNews(search.trim(), 60)
+        : await fetchLatestNews({ limit: 80, market: marketFilter !== "ALL" ? marketFilter : undefined });
+      setAllItems(result.items || []);
+      setTopicFilter(null);
+      setCount(result.count);
+      setLastUpdate(result.last_update);
+    } catch {}
+    finally { setFeedLoading(false); }
+  }, [search, marketFilter]);
+
+  useEffect(() => { loadIntelligence(); }, [loadIntelligence]);
+  useEffect(() => { if (tab === "feed") loadFeed(); }, [loadFeed, tab]);
+
+  const handleThemeClick = (themeName: string) => {
+    setSearch("");
+    setTopicFilter(themeName);
+    setTab("feed");
   };
 
-  const applyResponse = (response: { items: NewsItem[]; warnings: string[] }) => {
-    setItems(response.items);
-    setWarnings(response.warnings);
-    const first = response.items.find((item) => item.id !== null);
-    if (first?.id) openDetail(first.id);
-    else setSelected(null);
-  };
+  // Filter feed items by topic tag (exact match on topics/risk_tags)
+  const displayItems = useMemo(() => {
+    if (!topicFilter) return allItems;
+    const f = topicFilter.toLowerCase();
+    return allItems.filter((item) => {
+      const tags = [...(item.topics || []), ...(item.risk_tags || [])];
+      return tags.some((t) => t.toLowerCase() === f || t.toLowerCase().includes(f));
+    });
+  }, [allItems, topicFilter]);
 
-  const loadList = () => {
-    setError(null);
-    setLoadingList(true);
-    fetchLatestNews({ limit: 100, market, topic, symbol: symbol.trim() || undefined })
-      .then(applyResponse)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "新闻列表读取失败。"))
-      .finally(() => setLoadingList(false));
-  };
-
-  const runSearch = () => {
-    if (!keyword.trim()) {
-      loadList();
-      return;
-    }
-    setError(null);
-    setLoadingList(true);
-    searchNews(keyword.trim(), 100)
-      .then(applyResponse)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "新闻搜索失败。"))
-      .finally(() => setLoadingList(false));
-  };
-
-  const runSymbolSearch = () => {
-    if (!symbol.trim()) {
-      loadList();
-      return;
-    }
-    setError(null);
-    setLoadingList(true);
-    fetchNewsBySymbol(symbol.trim().toUpperCase(), 100)
-      .then(applyResponse)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "股票相关新闻读取失败。"))
-      .finally(() => setLoadingList(false));
-  };
-
-  const runCollect = () => {
-    setError(null);
+  const handleCollect = async () => {
     setCollecting(true);
-    collectNews({
-      limit_per_source: 30,
-      markets: market === "ALL" ? ["CN", "US", "HK", "GLOBAL"] : [market],
-      symbols: symbol.trim() ? [symbol.trim().toUpperCase()] : [],
-      keywords: keyword.trim() ? [keyword.trim()] : ["Federal Reserve", "AI chips", "中国经济"]
-    })
-      .then((response) => {
-        setCollectResult(response);
-        setWarnings(response.warnings);
-        return fetchLatestNews({ limit: 100, market, topic, symbol: symbol.trim() || undefined });
-      })
-      .then(applyResponse)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "新闻更新失败。"))
-      .finally(() => setCollecting(false));
+    try {
+      const req: NewsCollectRequest = { limit_per_source: 5, markets: ["CN", "US", "HK", "GLOBAL"], symbols: [], keywords: [] };
+      await collectNews(req);
+      setIntelLoaded(false);
+      loadIntelligence();
+      loadFeed();
+    } catch {}
+    finally { setCollecting(false); }
   };
-
-  useEffect(() => {
-    loadList();
-  }, []);
-
-  useEffect(() => {
-    loadList();
-  }, [market, topic]);
-
-  const highImportance = items.filter((item) => (item.importance_score ?? 0) >= 70).length;
-  const configuredWarnings = warnings.filter((warning) => warning.includes("未配置") || warning.includes("未安装"));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <PageIntro pageKey="news" />
-      </div>
-
-      <NewsFilterBar
-        market={market}
-        topic={topic}
-        symbol={symbol}
-        keyword={keyword}
-        onMarketChange={setMarket}
-        onTopicChange={setTopic}
-        onSymbolChange={setSymbol}
-        onKeywordChange={setKeyword}
-        onRefresh={loadList}
-        onSearch={runSearch}
-        onSymbolSearch={runSymbolSearch}
-        onCollect={runCollect}
-        loading={loadingList}
-        collecting={collecting}
-      />
-
-      {configuredWarnings.length ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          {configuredWarnings.slice(0, 5).map((warning) => <p key={warning}>{warning}</p>)}
-        </div>
-      ) : null}
-      {warnings.filter((warning) => !configuredWarnings.includes(warning)).length ? (
-        <div className="rounded-lg border border-line bg-[#fffaf2] p-4 text-sm leading-6 text-muted">
-          {warnings.filter((warning) => !configuredWarnings.includes(warning)).slice(0, 8).map((warning) => <p key={warning}>{warning}</p>)}
-        </div>
-      ) : null}
-      {error ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</div> : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="新闻数量" value={String(items.length)} detail="当前筛选结果" />
-        <MetricCard label="高重要性" value={String(highImportance)} detail="importance >= 70" />
-        <MetricCard label="已选市场" value={market} detail={topic || "全部主题"} />
-        <MetricCard label="最近入库" value={String(collectResult?.saved_count ?? "--")} detail="本次更新保存数" />
-      </div>
-
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="min-w-0 rounded-lg border border-line bg-panel p-4 shadow-soft">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-ink">新闻列表</h2>
-            <span className="rounded-full border border-line bg-[#fffaf2] px-3 py-1 text-xs text-muted">{loadingList ? "读取中..." : `${items.length} 条`}</span>
+    <div className="flex flex-col min-h-screen pb-24">
+      {/* Terminal header */}
+      <div className="sticky top-0 z-30 bg-[var(--bg-deep)]/95 backdrop-blur-md border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-between px-4 h-12">
+          <div className="flex items-center gap-2">
+            <Newspaper size={14} className="text-[var(--accent)]" />
+            <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-[var(--ink-primary)]">AI 情报中心</span>
           </div>
-          <div className="grid max-h-[72vh] gap-3 overflow-auto pr-1 lg:grid-cols-2">
-            {items.length ? items.map((item) => (
-              <NewsItemCard key={String(item.id ?? item.title)} item={item} active={selected?.id === item.id} onOpen={() => openDetail(item.id)} />
-            )) : (
-              <div className="rounded-lg border border-dashed border-line p-6 text-sm text-muted">
-                暂无新闻数据。可以点击“更新新闻”，或配置 Tushare / Finnhub / NewsAPI / Alpha Vantage 后再更新。
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5 p-0.5 bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+              {([
+                { key: "intelligence" as Tab, label: "情报" },
+                { key: "feed" as Tab, label: "新闻" },
+              ]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                    tab === key ? "bg-[var(--accent)] text-white" : "text-[var(--ink-dim)] hover:text-[var(--ink-secondary)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              className="w-7 h-7 bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--ink-muted)] active:scale-90 transition-transform"
+              onClick={handleCollect}
+              disabled={collecting}
+            >
+              <RefreshCw size={11} className={collecting ? "animate-spin" : ""} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Intelligence View */}
+      {tab === "intelligence" && (
+        <div className="pt-3 space-y-3">
+          <MarketNarrative
+            headline={intel?.narrative.headline || "正在分析市场..."}
+            body={intel?.narrative.body || ""}
+            keyThemes={intel?.narrative.key_themes || []}
+            riskLevel={intel?.narrative.risk_level || "normal"}
+            loading={intelLoading}
+          />
+          <SentimentGaugeView
+            data={intel?.sentiment || { overall: 50, ai_tech: 50, semiconductors: 50, macro_policy: 50, geopolitics: 50, risk_appetite: "neutral" }}
+            loading={intelLoading}
+          />
+          <ThemeCards themes={intel?.themes || []} loading={intelLoading} onThemeClick={handleThemeClick} />
+          <EventTimeline events={intel?.events || []} loading={intelLoading} />
+
+          {intel?.briefing && !intelLoading && (
+            <div className="px-4">
+              <div className="border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Newspaper size={11} className="text-[var(--down)]" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--down)]">AI 简报</span>
+                </div>
+                {intel.briefing.watch_today.length > 0 && (
+                  <div className="mb-1.5">
+                    <span className="text-[9px] text-[var(--ink-dim)] font-mono">WATCH</span>
+                    <div className="flex gap-1 mt-0.5 flex-wrap">
+                      {intel.briefing.watch_today.map((t) => (
+                        <span key={t} className="px-1.5 py-0.5 text-[9px] bg-[var(--down-soft)] text-[var(--down)] font-medium">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {intel.briefing.key_risks.length > 0 && (
+                  <div>
+                    <span className="text-[9px] text-[var(--ink-dim)] font-mono">RISK</span>
+                    <div className="flex gap-1 mt-0.5 flex-wrap">
+                      {intel.briefing.key_risks.map((r) => (
+                        <span key={r} className="px-1.5 py-0.5 text-[9px] bg-[var(--up-soft)] text-[var(--up)] font-medium">
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {intel?.warnings?.length ? (
+            <div className="px-4">
+              <div className="px-3 py-2 border border-[var(--border-subtle)] text-[10px] text-[var(--ink-muted)] font-mono">
+                {intel.warnings.map((w, i) => <p key={i}>{w}</p>)}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Feed View */}
+      {tab === "feed" && (
+        <div className="pt-3">
+          <div className="px-4 mb-3">
+            <div className="relative mb-2">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ink-dim)]" />
+              <input
+                className="w-full h-8 pl-8 pr-3 border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[11px] text-[var(--ink-primary)] font-mono placeholder:text-[var(--ink-dim)] outline-none focus:border-[var(--accent)]"
+                placeholder="搜索新闻..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            {/* Market + source filter */}
+            <div className="flex gap-1.5 items-center">
+              {["ALL", "CN", "US"].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMarketFilter(m)}
+                  className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border transition-all ${
+                    marketFilter === m
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "border-[var(--border-subtle)] text-[var(--ink-dim)] hover:text-[var(--ink-secondary)]"
+                  }`}
+                >
+                  {m === "ALL" ? "全部" : m}
+                </button>
+              ))}
+            </div>
+            {lastUpdate && (
+              <div className="mt-1 text-[9px] text-[var(--ink-dim)] font-mono">{count} ITEMS · {new Date(lastUpdate).toLocaleString("zh-CN")}</div>
+            )}
+            {topicFilter && (
+              <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[10px] text-[var(--accent)] font-medium">
+                <span>🔍 主题筛选: {topicFilter}</span>
+                <span className="text-[var(--ink-dim)]">({displayItems.length}条)</span>
+                <button onClick={() => setTopicFilter(null)} className="ml-auto"><X size={12} /></button>
               </div>
             )}
           </div>
-        </section>
 
-        <div className="space-y-5">
-          <NewsSourcePanel items={items} collectResult={collectResult} />
-          <aside className="min-w-0 rounded-lg border border-line bg-panel p-5 shadow-soft">
-            {loadingDetail ? (
-              <p className="text-sm text-muted">正在读取新闻详情...</p>
-            ) : selected ? (
-              <div className="space-y-5">
-                <div className="border-b border-line pb-4">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded-full bg-[#fff4e4] px-2 py-1 font-semibold text-brand">{selected.source ?? "未知来源"}</span>
-                    <span className="rounded-full border border-line px-2 py-1 text-muted">{selected.provider ?? "local"}</span>
-                    <span className="rounded-full border border-line px-2 py-1 text-muted">质 {score(selected.quality_score)}</span>
-                    <span className="rounded-full border border-line px-2 py-1 text-muted">重 {score(selected.importance_score)}</span>
-                  </div>
-                  <h2 className="mt-4 break-words text-2xl font-semibold leading-9 text-ink">{selected.title}</h2>
-                  <p className="mt-3 text-sm text-muted">{dateText(selected.published_at)}</p>
+          <div className="px-4 space-y-1">
+            {feedLoading ? (
+              [1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3 border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+                  <div className="skeleton h-2.5 w-3/4 mb-1.5" />
+                  <div className="skeleton h-2 w-full mb-1" />
+                  <div className="skeleton h-2 w-1/2" />
                 </div>
-                <NewsRiskTags tags={selected.risk_tags?.length ? selected.risk_tags : selected.risk_tag ? [selected.risk_tag] : []} />
-                {selected.url ? (
-                  <a className="inline-flex rounded-lg border border-brand bg-[#fff7ed] px-3 py-2 text-sm font-semibold text-brand hover:bg-[#ffedd5]" href={selected.url} target="_blank" rel="noreferrer">
-                    打开原文链接
-                  </a>
-                ) : (
-                  <p className="rounded-lg border border-dashed border-line p-3 text-sm text-muted">这条新闻没有原文链接。</p>
-                )}
-                <div className="rounded-lg border border-line bg-[#fffdf8] p-4">
-                  <h3 className="text-sm font-semibold text-ink">摘要</h3>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted">{selected.summary || selected.content || "暂无摘要。"}</p>
-                </div>
-                <div className="grid gap-3 text-sm">
-                  <div className="rounded-lg border border-line bg-[#fffaf2] p-3">
-                    <p className="text-xs text-muted">市场 / 主题 / 代码</p>
-                    <p className="mt-1 break-words font-medium text-ink">
-                      {[...(selected.markets || []), ...(selected.topics || []), ...(selected.symbols || [])].join(" · ") || "--"}
-                    </p>
-                  </div>
-                  {selected.sentiment_score !== null ? (
-                    <div className="rounded-lg border border-line bg-[#fffaf2] p-3">
-                      <p className="text-xs text-muted">情绪分</p>
-                      <p className="mt-1 font-medium text-ink">{selected.sentiment_score?.toFixed(3)}</p>
-                    </div>
-                  ) : null}
-                </div>
+              ))
+            ) : displayItems.length === 0 ? (
+              <div className="py-12 text-center text-[11px] text-[var(--ink-muted)]">
+                {topicFilter ? `没有找到关于 "${topicFilter}" 的新闻` : search ? "未找到相关新闻" : "暂无新闻"}
               </div>
             ) : (
-              <p className="text-sm text-muted">点击新闻卡片后，在这里查看详情。</p>
+              displayItems.map((item, i) => (
+                <a
+                  key={item.id ?? i}
+                  href={item.url || "#"}
+                  target={item.url ? "_blank" : undefined}
+                  rel="noopener"
+                  className={`block p-3 border border-[var(--border-subtle)] bg-[var(--bg-card)] active:bg-[var(--bg-card-hover)] transition-colors ${i > 0 ? "" : ""}`}
+                >
+                  <h3 className="text-[11px] font-semibold text-[var(--ink-primary)] line-clamp-2 leading-snug">{item.title || "(untitled)"}</h3>
+                  {(item.summary || "").length > 0 && (
+                    <p className="mt-0.5 text-[10px] text-[var(--ink-secondary)] line-clamp-2 leading-relaxed">
+                      {(item.summary || "").slice(0, 140)}
+                    </p>
+                  )}
+                  <div className="mt-1.5 flex items-center gap-3 text-[9px] text-[var(--ink-dim)] font-mono">
+                    <span>{item.source || "?"}</span>
+                    {item.published_at && <span>{new Date(item.published_at).toLocaleDateString("zh-CN")}</span>}
+                    {item.sentiment_score != null && (
+                      <span className={item.sentiment_score > 0 ? "text-up" : item.sentiment_score < 0 ? "text-down" : ""}>
+                        {item.sentiment_score > 0 ? "+" : ""}{item.sentiment_score.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                </a>
+              ))
             )}
-          </aside>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-
-export default NewsPage;

@@ -1,14 +1,12 @@
-function StockAnalysisReport({ text, source }: { text: string; source: string | null }) {
+export default function StockAnalysisReport({ text, source }: { text: string; source: string | null }) {
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-ink">研究摘要</h2>
-        <span className="rounded-full border border-line bg-[#fffaf2] px-3 py-1 text-xs text-muted">{source ?? "unknown"}</span>
+    <div className="border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+      <div className="flex items-center justify-between h-8 px-3 border-b border-[var(--border-subtle)]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">RESEARCH SUMMARY</span>
+        <span className="text-[9px] font-mono text-[var(--ink-dim)]">{source || "unknown"}</span>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted">{text}</p>
-      <p className="mt-4 text-xs text-muted">本分析仅用于研究与学习，不构成任何投资建议。</p>
-    </section>
+      <p className="p-3 text-[11px] leading-relaxed text-[var(--ink-secondary)] whitespace-pre-wrap">{text}</p>
+      <div className="px-3 pb-2 text-[9px] text-[var(--ink-dim)]">仅供研究学习，不构成投资建议</div>
+    </div>
   );
 }
-
-export default StockAnalysisReport;

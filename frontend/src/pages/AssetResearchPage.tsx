@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   AssetResearchResponse,
   MarketPerformanceItem,
@@ -71,7 +71,7 @@ function AssetResearchPage({ useLlm }: { useLlm: boolean }) {
           <label className="space-y-2 text-sm">
             <span className="font-medium text-ink">资产库</span>
             <select
-              className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm"
               value={symbol}
               onChange={(event) => setSymbol(event.target.value)}
             >
@@ -86,11 +86,11 @@ function AssetResearchPage({ useLlm }: { useLlm: boolean }) {
           </label>
           <label className="space-y-2 text-sm">
             <span className="font-medium text-ink">开始日期</span>
-            <input className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" type="date" value={start} onChange={(event) => setStart(event.target.value)} />
+            <input className="w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" type="date" value={start} onChange={(event) => setStart(event.target.value)} />
           </label>
           <label className="space-y-2 text-sm">
             <span className="font-medium text-ink">结束日期</span>
-            <input className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" type="date" value={end} onChange={(event) => setEnd(event.target.value)} />
+            <input className="w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm" type="date" value={end} onChange={(event) => setEnd(event.target.value)} />
           </label>
           <div className="flex items-end">
             <button className="primary-button w-full" onClick={load}>读取资产研究</button>

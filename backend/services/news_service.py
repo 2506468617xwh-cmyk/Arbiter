@@ -67,6 +67,7 @@ def _from_model_item(item: Any) -> NewsItem:
         topics=list(getattr(item, "topics", []) or []),
         symbols=list(getattr(item, "symbols", []) or []),
         summary=getattr(item, "summary", None),
+        language=getattr(item, "language", None),
     )
 
 

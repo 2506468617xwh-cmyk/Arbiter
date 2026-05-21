@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+﻿import { FormEvent, useEffect, useState } from "react";
 import { ResearchGenerateRequest } from "../api/client";
 
 interface ResearchFormProps {
@@ -63,7 +63,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
         <label className="block text-sm">
           <span className="font-medium text-ink">报告类型</span>
           <select
-            className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+            className="mt-2 w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm outline-none focus:border-brand"
             value={target}
             onChange={(event) => setTarget(event.target.value)}
           >
@@ -74,7 +74,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
         <label className="block text-sm">
           <span className="font-medium text-ink">研究风格</span>
           <input
-            className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+            className="mt-2 w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm outline-none focus:border-brand"
             value={reportStyle}
             onChange={(event) => setReportStyle(event.target.value)}
           />
@@ -85,7 +85,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
         <label className="mt-5 block text-sm">
           <span className="font-medium text-ink">{target === "fund_analysis" ? "基金/ETF 代码" : "股票代码"}</span>
           <input
-            className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+            className="mt-2 w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm outline-none focus:border-brand"
             value={symbol}
             onChange={(event) => setSymbol(event.target.value)}
             placeholder={target === "fund_analysis" ? "如 510300.SH / QQQ.US / 2800.HK" : "如 600519.SH / TSLA.US / 700.HK"}
@@ -97,7 +97,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
         <p className="text-sm font-medium text-ink">报告板块</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {sectionOptions.map((option) => (
-            <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted">
+            <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm text-muted">
               <input type="checkbox" checked={sections.includes(option.value)} onChange={() => toggleSection(option.value)} />
               {option.label}
             </label>
@@ -105,7 +105,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
         </div>
       </div>
 
-      <div className="mt-5 rounded-lg border border-line bg-[#fffaf2] p-3">
+      <div className="mt-5 rounded-lg border border-line bg-[var(--bg-card)] p-3">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-ink">调用大模型</p>
@@ -120,7 +120,7 @@ function ResearchForm({ submitting, defaultUseLlm, onSubmit }: ResearchFormProps
       <label className="mt-5 block text-sm">
         <span className="font-medium text-ink">额外要求</span>
         <textarea
-          className="mt-2 min-h-28 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
+          className="mt-2 min-h-28 w-full rounded-lg border border-line bg-[var(--bg-card)] px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
           value={extraInstruction}
           onChange={(event) => setExtraInstruction(event.target.value)}
           placeholder="例如：更关注风险提示和数据缺口，结论要更凝练。"

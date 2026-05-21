@@ -1,4 +1,4 @@
-import { ReportContentResponse } from "../api/client";
+﻿import { ReportContentResponse } from "../api/client";
 
 interface ReportReaderProps {
   report: ReportContentResponse | null;
@@ -109,9 +109,9 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
   if (block.type === "table") {
     return (
-      <div key={index} className="mt-4 max-w-full overflow-x-auto rounded-lg border border-line bg-white">
+      <div key={index} className="mt-4 max-w-full overflow-x-auto rounded-lg border border-line bg-[var(--bg-card)]">
         <table className="w-full min-w-max border-collapse text-left text-sm">
-          <thead className="bg-[#fff4e4] text-ink">
+          <thead className="bg-[var(--bg-card-hover)] text-ink">
             <tr>
               {block.headers.map((header, cellIndex) => (
                 <th key={`${header}-${cellIndex}`} className="whitespace-nowrap border-b border-line px-3 py-2 text-left font-semibold">
@@ -122,7 +122,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
           </thead>
           <tbody>
             {block.rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="odd:bg-white even:bg-[#fffaf2]">
+              <tr key={rowIndex} className="odd:bg-[var(--bg-card)] even:bg-[var(--bg-card)]">
                 {block.headers.map((_, cellIndex) => (
                   <td key={cellIndex} className="max-w-[360px] min-w-[96px] border-b border-line/70 px-3 py-2 align-top text-muted">
                     {row[cellIndex] || "-"}
@@ -138,7 +138,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
   if (block.type === "image") {
     return (
-      <figure key={index} className="mt-5 max-w-full overflow-hidden rounded-lg border border-line bg-white p-3">
+      <figure key={index} className="mt-5 max-w-full overflow-hidden rounded-lg border border-line bg-[var(--bg-card)] p-3">
         <img src={block.src} alt={block.alt} className="h-auto max-w-full rounded-md" loading="lazy" />
         {block.alt ? <figcaption className="mt-2 text-xs text-muted">{block.alt}</figcaption> : null}
       </figure>
@@ -197,7 +197,7 @@ function ReportReader({ report, loading, error }: ReportReaderProps) {
           {report.filename} · {new Date(report.updated_at).toLocaleString()} · {report.size_bytes.toLocaleString()} bytes
         </p>
       </div>
-      <div className="mt-5 max-h-[76vh] max-w-full overflow-auto rounded-md bg-[#fffdf8] p-4">
+      <div className="mt-5 max-h-[76vh] max-w-full overflow-auto rounded-md bg-[var(--bg-elevated)] p-4">
         {blocks.map(renderBlock)}
       </div>
     </article>

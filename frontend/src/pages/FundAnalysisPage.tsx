@@ -8,9 +8,8 @@ import FundQuoteCard from "../components/FundQuoteCard";
 import FundResearchChatPanel from "../components/FundResearchChatPanel";
 import FundRiskPanel from "../components/FundRiskPanel";
 import FundSearchBox from "../components/FundSearchBox";
-import PageIntro from "../components/PageIntro";
 
-function FundAnalysisPage({ useLlm }: { useLlm: boolean }) {
+export default function FundAnalysisPage({ useLlm }: { useLlm: boolean }) {
   const [symbol, setSymbol] = useState("QQQ.US");
   const [data, setData] = useState<FundAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,19 +20,25 @@ function FundAnalysisPage({ useLlm }: { useLlm: boolean }) {
     setLoading(true);
     fetchFundAnalysis(symbol, useLlm)
       .then(setData)
-      .catch((exc) => setError(exc instanceof Error ? exc.message : "基金/ETF 分析失败。"))
+      .catch((exc) => setError(exc instanceof Error ? exc.message : "基金/ETF 分析失败"))
       .finally(() => setLoading(false));
   };
 
   return (
-    <div className="space-y-6">
-      <PageIntro pageKey="fund" />
-
+    <div className="px-4 space-y-2">
       <FundSearchBox value={symbol} loading={loading} onChange={setSymbol} onSubmit={load} />
 
-      {error ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</div> : null}
+      {error && (
+        <div className="px-3 py-2 text-[10px] text-[var(--ink-muted)] font-mono border border-[var(--border-subtle)]">{error}</div>
+      )}
 
-      {loading ? <section className="rounded-lg border border-line bg-panel p-6 text-sm text-muted">正在读取数据源并计算基金/ETF指标...</section> : null}
+      {loading && (
+        <div className="space-y-1.5 pt-1">
+          <div className="skeleton h-16 w-full" />
+          <div className="skeleton h-36 w-full" />
+          <div className="skeleton h-24 w-full" />
+        </div>
+      )}
 
       {data ? (
         <>
@@ -45,13 +50,11 @@ function FundAnalysisPage({ useLlm }: { useLlm: boolean }) {
           <FundAnalysisReport text={data.research_summary} source={data.source} />
           <FundResearchChatPanel symbol={data.symbol} useLlm={useLlm} />
         </>
-      ) : (
-        <section className="rounded-lg border border-dashed border-line bg-panel p-6 text-sm text-muted">
-          输入或选择基金/ETF代码后开始分析。示例：510300.SH、513100.SH、QQQ.US、SPY.US、2800.HK。
-        </section>
-      )}
+      ) : !loading ? (
+        <div className="py-12 text-center text-[11px] text-[var(--ink-muted)] font-mono">
+          输入代码后点击分析 · 示例：510300.SH / QQQ.US / 2800.HK
+        </div>
+      ) : null}
     </div>
   );
 }
-
-export default FundAnalysisPage;

@@ -1,42 +1,32 @@
-function FundRiskPanel({
-  allocation,
-  risk,
-  liquidity,
-  warnings
+export default function FundRiskPanel({
+  allocation, risk, liquidity, warnings,
 }: {
-  allocation: string;
-  risk: string;
-  liquidity: string;
-  warnings: string[];
+  allocation: string; risk: string; liquidity: string; warnings: string[];
 }) {
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
-      <h2 className="text-lg font-semibold text-ink">资产类别与风险</h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
-        <Panel title="资产类别判断" text={allocation} />
-        <Panel title="主要风险" text={risk} />
-        <Panel title="流动性观察" text={liquidity} />
+    <div className="border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+      <div className="flex items-center h-8 px-3 border-b border-[var(--border-subtle)]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">ALLOCATION & RISK</span>
       </div>
-      {warnings.length ? (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          <p className="font-medium">数据提示</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {warnings.map((warning) => <li key={warning}>{warning}</li>)}
-          </ul>
+      <div className="p-3 space-y-3">
+        <div className="grid gap-2 sm:grid-cols-3">
+          {([
+            ["资产类别", allocation],
+            ["主要风险", risk],
+            ["流动性", liquidity],
+          ] as [string, string][]).map(([title, text]) => (
+            <div key={title}>
+              <span className="text-[9px] text-[var(--ink-dim)] uppercase tracking-wider">{title}</span>
+              <p className="text-[11px] text-[var(--ink-secondary)] leading-relaxed mt-0.5">{text}</p>
+            </div>
+          ))}
         </div>
-      ) : null}
-    </section>
-  );
-}
-
-function Panel({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-[#fffaf2] p-4">
-      <p className="text-sm font-medium text-ink">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
+        {warnings.length > 0 && (
+          <div className="px-3 py-2 text-[10px] text-[var(--ink-muted)] font-mono bg-[var(--bg-elevated)]">
+            {warnings.map((w) => <p key={w}>{w}</p>)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-export default FundRiskPanel;
-

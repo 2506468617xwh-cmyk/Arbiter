@@ -1,9 +1,9 @@
-import { MouseEvent, useMemo, useRef, useState } from "react";
+﻿import { MouseEvent, useMemo, useRef, useState } from "react";
 import { FundBar } from "../api/client";
 
-const width = 920;
-const height = 340;
-const margin = { top: 20, right: 28, bottom: 48, left: 68 };
+const width = 780;
+const height = 240;
+const margin = { top: 14, right: 20, bottom: 34, left: 52 };
 
 interface Active {
   date: string;
@@ -76,42 +76,42 @@ function FundNavChart({
   const xTicks = [0, Math.floor(data.rows.length / 2), data.rows.length - 1];
 
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
+    <section className="border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-ink">基金/ETF vs 大盘走势</h2>
+        <h2 className="text-xs font-semibold text-ink">基金/ETF vs 大盘走势</h2>
         <p className="text-xs text-muted">归一化表现，起点 = 100</p>
       </div>
       <div className="relative mt-4 overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[760px] touch-pan-y select-none"
+          className="min-w-[640px] touch-pan-y select-none"
           onMouseMove={(event: MouseEvent<SVGSVGElement>) => updateActive(event.clientX, event.currentTarget)}
           onMouseLeave={() => { lastDate.current = null; setActive(null); }}
           onClick={(event) => updateActive(event.clientX, event.currentTarget)}
         >
-          <rect width={width} height={height} fill="#fffdf9" />
+          <rect width={width} height={height} fill="var(--bg-card)" />
           {ticks.map((tick) => {
             const y = yFor(tick);
             return (
               <g key={tick}>
-                <line x1={margin.left} y1={y} x2={width - margin.right} y2={y} stroke="#eee4d6" />
-                <text x={margin.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#746b64">{tick.toFixed(1)}</text>
+                <line x1={margin.left} y1={y} x2={width - margin.right} y2={y} stroke="var(--border-card)" />
+                <text x={margin.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">{tick.toFixed(1)}</text>
               </g>
             );
           })}
-          <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="#cfc3b4" />
-          <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="#cfc3b4" />
+          <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="var(--border-card)" />
+          <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="var(--border-card)" />
           {xTicks.map((index) => {
             const row = data.rows[index];
             if (!row) return null;
             const x = xFor(index);
-            return <text key={row.date} x={x} y={height - 18} textAnchor="middle" fontSize="11" fill="#746b64">{row.date.slice(5)}</text>;
+            return <text key={row.date} x={x} y={height - 18} textAnchor="middle" fontSize="11" fill="var(--ink-muted)">{row.date.slice(5)}</text>;
           })}
           <path d={pathFor("value")} fill="none" stroke="#d97706" strokeWidth="2.4" />
           <path d={pathFor("benchmark")} fill="none" stroke="#7c3aed" strokeWidth="2" strokeDasharray="6 4" />
           <path d={pathFor("ma20")} fill="none" stroke="#2563eb" strokeWidth="1.4" />
           <path d={pathFor("ma60")} fill="none" stroke="#16a34a" strokeWidth="1.4" />
-          {active ? <line x1={active.x} y1={margin.top} x2={active.x} y2={height - margin.bottom} stroke="#8b7b68" strokeDasharray="4 4" /> : null}
+          {active ? <line x1={active.x} y1={margin.top} x2={active.x} y2={height - margin.bottom} stroke="var(--ink-dim)" strokeDasharray="4 4" /> : null}
         </svg>
         {active ? (
           <div className="pointer-events-none absolute top-4 rounded-lg border border-line bg-panel p-3 text-xs shadow-soft" style={{ left: Math.min(Math.max(active.x - 18, 12), width - 230) }}>

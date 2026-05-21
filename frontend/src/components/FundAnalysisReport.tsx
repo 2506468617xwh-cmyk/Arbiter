@@ -1,14 +1,11 @@
-function FundAnalysisReport({ text, source }: { text: string; source: string | null }) {
+export default function FundAnalysisReport({ text, source }: { text: string; source: string | null }) {
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-soft">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-ink">研究摘要</h2>
-        <span className="rounded-lg border border-line bg-[#fffaf2] px-3 py-1 text-xs text-muted">{source || "unknown"}</span>
+    <div className="border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+      <div className="flex items-center justify-between h-8 px-3 border-b border-[var(--border-subtle)]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]">RESEARCH SUMMARY</span>
+        <span className="text-[9px] font-mono text-[var(--ink-dim)]">{source || "unknown"}</span>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-ink">{text}</p>
-    </section>
+      <p className="p-3 text-[11px] leading-relaxed text-[var(--ink-secondary)] whitespace-pre-wrap">{text}</p>
+    </div>
   );
 }
-
-export default FundAnalysisReport;
-

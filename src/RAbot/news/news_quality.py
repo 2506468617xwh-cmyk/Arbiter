@@ -115,9 +115,9 @@ def infer_sentiment(title: str, summary: str | None = None) -> str:
     bullish = sum(1 for word in BULLISH_WORDS if word.lower() in text)
     bearish = sum(1 for word in BEARISH_WORDS if word.lower() in text)
     if bullish > bearish:
-        return "偏利多"
+        return "利好"
     if bearish > bullish:
-        return "偏利空"
+        return "利空"
     return "中性"
 
 
@@ -352,18 +352,21 @@ def deduplicate_news(df: pd.DataFrame) -> pd.DataFrame:
 
 
 RISK_TAG_KEYWORDS = {
-    "macro_policy": ["fed", "fomc", "powell", "央行", "美联储", "降息", "加息", "利率", "货币政策"],
-    "earnings": ["earnings", "revenue", "profit", "guidance", "财报", "业绩", "利润", "盈利预警"],
-    "regulation": ["regulation", "监管", "罚款", "调查", "反垄断"],
-    "geopolitics": ["war", "sanction", "tariff", "geopolitical", "战争", "制裁", "关税", "地缘"],
-    "liquidity": ["liquidity", "流动性", "逆回购", "融资", "资金面"],
-    "credit": ["credit", "default", "debt", "债务", "违约", "信用"],
-    "ai_chip": ["ai", "chip", "nvidia", "semiconductor", "人工智能", "芯片", "半导体", "英伟达"],
-    "china_market": ["china", "a-share", "csi", "中国", "a股", "沪深300", "上证"],
-    "us_market": ["nasdaq", "s&p", "dow", "wall street", "美股", "纳斯达克", "标普"],
-    "hk_market": ["hong kong", "hang seng", "港股", "恒生"],
-    "commodity": ["oil", "gold", "copper", "commodity", "原油", "黄金", "大宗商品", "铜"],
-    "fx_rate": ["dollar", "yuan", "renminbi", "fx", "美元", "人民币", "汇率"],
+    "地缘风险": ["war", "sanction", "tariff", "geopolitical", "战争", "制裁", "关税", "地缘"],
+    "监管风险": ["regulation", "监管", "罚款", "调查", "反垄断"],
+    "流动性风险": ["liquidity", "流动性", "逆回购", "融资", "资金面"],
+    "信用风险": ["credit", "default", "debt", "债务", "违约", "信用"],
+    "市场波动": ["selloff", "sell-off", "volatility", "vix", "恐慌", "抛售", "波动率"],
+    "政策收紧": ["fed", "fomc", "powell", "加息", "hawkish", "美联储鹰派", "紧缩"],
+    "政策宽松": ["dovish", "降息", "利率下调", "刺激", "宽松", "降准", "一揽子政策"],
+    "经济衰退": ["recession", "slowdown", "衰退", "经济放缓"],
+    "通胀压力": ["cpi", "inflation", "core inflation", "pce", "通胀", "物价", "通膨"],
+    "汇率风险": ["dollar", "yuan", "renminbi", "fx currency", "美元", "人民币", "汇率", "贬值"],
+    "行业利空": ["crackdown", "预警", "限制", "处罚", "利空"],
+    "行业利好": ["利好", "支持", "扶持", "补贴", "鼓励"],
+    "公司负面": ["亏损", "暴跌", "暴雷", "造假", "退市", "减值"],
+    "公司正面": ["超预期", "扭亏", "增长", "突破", "创新高"],
+    "突发事件": ["breaking", "突发", "紧急", "公告", "紧急停牌"],
 }
 
 
@@ -413,7 +416,7 @@ def score_news_item(item: NewsItem, focus_symbols: list[str] | None = None) -> N
     item.quality_score = max(0, min(100, float(round(quality, 1))))
     # 统一情绪推断（解决此前新版 NewsItem 缺失 sentiment_score 的问题）
     item.sentiment_score = float(
-        {"偏利多": 0.6, "偏利空": -0.6, "中性": 0.0}.get(
+        {"利好": 0.6, "利空": -0.6, "中性": 0.0}.get(
             infer_sentiment(item.title, item.summary), 0.0
         )
     )

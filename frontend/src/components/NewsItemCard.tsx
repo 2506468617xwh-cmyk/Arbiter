@@ -1,4 +1,4 @@
-import { NewsItem } from "../api/client";
+﻿import { NewsItem } from "../api/client";
 import NewsRiskTags from "./NewsRiskTags";
 
 interface NewsItemCardProps {
@@ -21,7 +21,7 @@ function NewsItemCard({ item, active, onOpen }: NewsItemCardProps) {
   return (
     <button
       className={`w-full rounded-lg border p-4 text-left transition ${
-        active ? "border-brand bg-[#fff7ed] shadow-soft" : "border-line bg-[#fffdf8] hover:border-brand/50 hover:bg-[#fffaf2]"
+        active ? "border-brand bg-[var(--accent-soft)] shadow-soft" : "border-line bg-[var(--bg-elevated)] hover:border-brand/50 hover:bg-[var(--bg-card)]"
       }`}
       onClick={onOpen}
       disabled={!item.id}
@@ -31,15 +31,15 @@ function NewsItemCard({ item, active, onOpen }: NewsItemCardProps) {
           <p className="break-words text-sm font-semibold leading-6 text-ink">{item.title}</p>
           <p className="mt-2 line-clamp-2 break-words text-xs leading-5 text-muted">{item.summary || "暂无摘要。"}</p>
         </div>
-        <div className="shrink-0 rounded-lg bg-[#fff4e4] px-2 py-1 text-center text-xs font-semibold text-brand">
+        <div className="shrink-0 rounded-lg bg-[var(--bg-card-hover)] px-2 py-1 text-center text-xs font-semibold text-brand">
           <p>质 {score(item.quality_score)}</p>
           <p>重 {score(item.importance_score)}</p>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="rounded-full border border-line bg-white px-2 py-1">{item.source ?? "未知来源"}</span>
-        <span className="rounded-full border border-line bg-white px-2 py-1">{item.provider ?? "local"}</span>
-        <span className="rounded-full border border-line bg-white px-2 py-1">{dateText(item.published_at)}</span>
+        <span className="rounded-full border border-line bg-[var(--bg-card)] px-2 py-1">{item.source ?? "未知来源"}</span>
+        <span className="rounded-full border border-line bg-[var(--bg-card)] px-2 py-1">{item.provider ?? "local"}</span>
+        <span className="rounded-full border border-line bg-[var(--bg-card)] px-2 py-1">{dateText(item.published_at)}</span>
       </div>
       <div className="mt-3">
         <NewsRiskTags tags={item.risk_tags?.length ? item.risk_tags : item.risk_tag ? [item.risk_tag] : []} />

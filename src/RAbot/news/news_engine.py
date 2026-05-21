@@ -68,9 +68,9 @@ def build_news_interpretation(
     asset_text = "、".join(assets) if assets else "相关资产"
     event_text = event_type or "未分类事件"
 
-    if sentiment_label == "偏利多":
+    if sentiment_label == "利好":
         impact = "这条新闻可能对相关资产形成一定利多，主要通过风险偏好、盈利预期、政策预期或流动性预期传导。"
-    elif sentiment_label == "偏利空":
+    elif sentiment_label == "利空":
         impact = "这条新闻可能对相关资产形成一定利空，主要通过估值压力、利率预期、风险偏好下降或基本面担忧传导。"
     else:
         impact = "这条新闻目前更偏中性，适合作为背景信息纳入观察，但暂不宜单独作为方向判断依据。"
@@ -119,11 +119,17 @@ def enrich_news_dataframe(df: pd.DataFrame, default_assets: list[str] | None = N
 def _init_multi_source_providers():
     from RAbot.news.akshare_news_provider import AKShareNewsProvider
     from RAbot.news.alphavantage_news_provider import AlphaVantageNewsProvider
+    from RAbot.news.eastmoney_news_provider import EastmoneyNewsProvider
     from RAbot.news.finnhub_news_provider import FinnhubNewsProvider
+    from RAbot.news.futu_news_provider import FutuNewsProvider
     from RAbot.news.newsapi_provider import NewsAPIProvider
     from RAbot.news.rsshub_news_provider import RSSHubNewsProvider
+    from RAbot.news.sina_news_provider import SinaFinanceNewsProvider
 
     return [
+        SinaFinanceNewsProvider(),
+        EastmoneyNewsProvider(),
+        FutuNewsProvider(),
         AKShareNewsProvider(),
         RSSHubNewsProvider(),
         FinnhubNewsProvider(),

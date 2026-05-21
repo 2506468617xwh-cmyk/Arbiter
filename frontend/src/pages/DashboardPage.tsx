@@ -30,14 +30,14 @@ function DashboardPage() {
       {error ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</div> : null}
 
       {/* === 仪表盘 === */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2">
         <MetricCard label="市场状态" value={data?.market_status === "connected" ? "已连接" : "待更新"} detail={data?.summary ?? "正在读取本地行情。"} />
         <MetricCard label="资产数量" value={String(data?.asset_count ?? 0)} detail="本地行情覆盖" />
         <MetricCard label="最新日期" value={data?.latest_date ?? "--"} detail="按资产最新日期汇总" />
         <MetricCard label="更新时间" value={data ? new Date(data.last_update).toLocaleTimeString() : "--:--"} detail="接口读取时间" />
       </div>
       <SectionCard title="总览判断" warnings={data?.warnings}>{data?.summary ?? "暂无总览。"}</SectionCard>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-2">
         <HeatList title="强势资产" items={data?.strong_assets ?? []} metric="return_1m" />
         <HeatList title="弱势资产" items={data?.weak_assets ?? []} metric="return_1m" />
         <HeatList title="高波动资产" items={data?.high_volatility_assets ?? []} metric="volatility_20d" />
@@ -45,12 +45,12 @@ function DashboardPage() {
       </div>
 
       {/* === 分隔 === */}
-      <hr className="border-line" />
+      <hr className="border-[var(--border-subtle)]" />
 
       {/* === 热力榜 === */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <h2 className="text-lg font-semibold text-ink">资产热力排行</h2>
-        <select className="rounded-lg border border-line bg-panel px-3 py-2 text-sm" value={metric} onChange={(e) => setMetric(e.target.value as keyof MarketPerformanceItem)}>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-base font-semibold">资产热力排行</h2>
+        <select className="rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] px-3 py-2.5 text-sm text-[var(--ink-primary)]" value={metric} onChange={(e) => setMetric(e.target.value as keyof MarketPerformanceItem)}>
           <option value="return_1w">近1周收益</option>
           <option value="return_1m">近1月收益</option>
           <option value="return_3m">近3月收益</option>
