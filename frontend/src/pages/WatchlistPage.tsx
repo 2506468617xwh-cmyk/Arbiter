@@ -27,7 +27,7 @@ interface Holding {
 
 interface SearchResult {
   symbol: string;
-  name: string;
+  name?: string;
   type: "stock" | "fund";
   source?: string;
   market?: string;
@@ -107,8 +107,8 @@ export default function WatchlistPage() {
     setSearching(true);
     try {
       const [stockRes, fundRes] = await Promise.all([
-        searchStocks(query.trim()).catch(() => ({ items: [] } as StockSearchResponse)),
-        searchFunds(query.trim()).catch(() => ({ items: [] } as FundSearchResponse)),
+        searchStocks(query.trim()).catch(() => ({ items: [], warnings: [] } as StockSearchResponse)),
+        searchFunds(query.trim()).catch(() => ({ items: [], warnings: [] } as FundSearchResponse)),
       ]);
       const results: SearchResult[] = [
         ...(stockRes.items || []).map((s) => ({ ...s, type: "stock" as const })),
@@ -146,8 +146,8 @@ export default function WatchlistPage() {
     if (query.trim().length < 1) { setHoldingForm((f) => ({ ...f, results: [] })); return; }
     try {
       const [stockRes, fundRes] = await Promise.all([
-        searchStocks(query.trim()).catch(() => ({ items: [] } as StockSearchResponse)),
-        searchFunds(query.trim()).catch(() => ({ items: [] } as FundSearchResponse)),
+        searchStocks(query.trim()).catch(() => ({ items: [], warnings: [] } as StockSearchResponse)),
+        searchFunds(query.trim()).catch(() => ({ items: [], warnings: [] } as FundSearchResponse)),
       ]);
       const results: SearchResult[] = [
         ...(stockRes.items || []).map((s) => ({ ...s, type: "stock" as const })),
