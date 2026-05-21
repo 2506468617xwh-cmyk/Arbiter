@@ -68,15 +68,40 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict[str, object]:
-    data_dir = get_data_dir()
+    import traceback
+    data_dir_exists = False
+    reports_dir_exists = False
+    try:
+        data_dir = get_data_dir()
+        data_dir_exists = data_dir.is_dir()
+        reports_dir_exists = (data_dir / "reports").is_dir()
+    except Exception:
+        pass
     return {
         "status": "ok",
         "app": "RAbot API",
         "version": "0.1.0",
         "environment": os.getenv("APP_ENV", "development"),
-        "data_dir_exists": data_dir.is_dir(),
-        "reports_dir_exists": (data_dir / "reports").is_dir(),
+        "data_dir_exists": data_dir_exists,
+        "reports_dir_exists": reports_dir_exists,
+        "cwd": str(Path.cwd()),
+        "project_dir": str(PROJECT_DIR),
+        "pythonpath": os.getenv("PYTHONPATH", ""),
+        "sys_path_src": [p for p in sys.path if "src" in p],
+        "frontend_dist_exists": FRONTEND_DIST.is_dir(),
     }
+
+
+@app.get("/api/debug/routes")
+def debug_routes() -> dict[str, object]:
+    routes = []
+    for route in app.routes:
+        routes.append({
+            "path": getattr(route, "path", ""),
+            "name": getattr(route, "name", ""),
+            "methods": list(getattr(route, "methods", set())),
+        })
+    return {"count": len(routes), "routes": [r for r in routes if r["path"].startswith("/api")]}
 
 
 app.include_router(overview_router, prefix="/api")
