@@ -4,7 +4,12 @@
       "Bash(git add *)",
       "Bash(pip install *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl -s \"http://127.0.0.1:8000/api/market/timeseries?symbols=CHINEXT,SSE,CSI300&normalize=false\")",
+      "PowerShell(Get-Process -Name \"node\",\"esbuild\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "Bash(\"e:\\\\RAbot - Mobile\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import RAbot; print\\(RAbot.__file__\\)\")",
+      "Bash(\"e:\\\\RAbot - Mobile\\\\.venv\\\\Scripts\\\\pip.exe\" install -e \"e:\\\\RAbot - Mobile\\\\src\")"
     ]
   }
 }
