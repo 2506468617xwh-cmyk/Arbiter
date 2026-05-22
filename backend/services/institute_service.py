@@ -794,77 +794,129 @@ def run_institute_question(task_id: str, question: str) -> dict[str, Any]:
     except Exception:
         pass
 
-    # Detect symbols from the question
+    # Guardrail: quick keyword check — reject non-investment questions without LLM call
+    invest_keywords = [
+        "股票", "基金", "ETF", "指数", "大盘", "涨", "跌", "行情", "走势", "趋势",
+        "买入", "卖出", "持仓", "仓位", "投资", "交易", "收益", "回撤", "波动",
+        "利率", "通胀", "CPI", "GDP", "美联储", "央行", "降息", "加息", "货币政策",
+        "纳斯达克", "标普", "道琼斯", "沪深", "恒生", "科创", "创业板", "上证",
+        "黄金", "原油", "美元", "人民币", "汇率", "债券", "大宗商品",
+        "TSLA", "AAPL", "NVDA", "QQQ", "SPY", "stock", "market", "finance",
+        "分析", "估值", "财报", "PE", "PB", "ROE", "EPS", "dividend", "股息",
+        "科技股", "银行股", "医药", "新能源", "芯片", "AI", "人工智能",
+        "sector", "portfolio", "allocation", "risk", "hedge", "option",
+    ]
+    text_lower = question.lower()
+    is_invest = any(kw.lower() in text_lower for kw in invest_keywords)
+    if not is_invest:
+        # One-shot: LLM guardrail + answer in single call
+        return _quick_non_invest_reject(task_id, question)
+
+    # Detect asset symbols from the question
     symbols = _detect_symbols(question)
     primary_symbol = symbols[0] if symbols else None
 
-    if primary_symbol:
-        _update(task_id, 5, f"检测到资产：{primary_symbol}", f"为 {primary_symbol} 拉取数据并启动五层分析")
-        # Run the FULL 5-layer analysis with real data
-        result = run_institute_analysis(task_id, primary_symbol)
-        # Inject the user's question for the judge
-        if result.get("judge"):
-            result["judge"]["用户提问"] = question
-            result["question"] = question
-            result["mode"] = "qa_with_data"
-        return result
-
-    # Fallback: no specific asset detected — do market-level analysis
-    _update(task_id, 5, "未检测到特定资产", "以全市场视角进行分析…")
-    result = run_institute_analysis(task_id, None)
-
-    # Add a Q&A wrapper with guardrails
-    _update(task_id, 82, "综合回答用户问题", "结合市场数据生成回答")
-
-    # Check if question is investment-related via LLM guardrail
-    ok_guard, guard_text = _call_llm(
-        system_prompt="判断用户问题是否与投资研究相关。只回答 YES 或 NO。",
-        user_prompt=f"用户问题：{question}\n\n这个问题与投资、金融、股票、基金、宏观经济学相关吗？只回答YES或NO。",
-        temperature=0,
-        max_tokens=5,
-    )
-    if ok_guard and guard_text.strip().upper().startswith("N"):
-        result["judge"]["核心理由"] = "抱歉，我是投资研究助手，只能回答与投资、金融市场、宏观经济相关的问题。请提出投研相关问题。"
-        result["judge"]["裁决"] = "中性观望"
-        result["question"] = question
-        result["mode"] = "qa_guardrail"
-        return result
-
-    # If investment-related, use the market data + LLM to answer the question
-    if result.get("judge"):
-        market_context = json.dumps({
-            "fundamental_rating": result.get("fundamental", {}).get("评级"),
-            "technical_rating": result.get("technical", {}).get("评级"),
-            "sentiment_overall": result.get("sentiment", {}).get("整体情绪"),
-            "bull_confidence": result.get("bull", {}).get("做多信心"),
-            "bear_confidence": result.get("bear", {}).get("做空信心"),
-            "judge_verdict": result.get("judge", {}).get("裁决"),
-            "judge_reason": result.get("judge", {}).get("核心理由", "")[:300],
-        }, ensure_ascii=False)
-
-        ok_qa, qa_text = _call_llm(
-            system_prompt="""你是 ArbiterX 投资研究助手。根据五层Agent分析系统的真实数据来回答用户问题。
-
-规则：
-1. 以五层分析数据为依据回答，标注哪些来自数据分析、哪些是一般性知识
-2. 如果问题与投研完全无关，礼貌拒绝
-3. 不给出具体买卖建议，不承诺收益
-4. 中文回答，300-500字""",
-            user_prompt=f"""用户问题：{question}
-
-以下是 ArbiterX 五层分析系统基于真实市场数据生成的结论：
-{market_context}
-
-请基于以上数据回答用户问题。如果数据不足以回答，坦诚说明。""",
-            temperature=0.3,
-            max_tokens=900,
-        )
-
-        if ok_qa and qa_text.strip():
-            result["judge"]["核心理由"] = qa_text.strip()
+    # Run full 5-layer analysis with the question injected into judge
+    _update(task_id, 10, f"分析{primary_symbol or '全市场'}", "拉取数据 → 五层Agent分析")
+    result = _run_analysis_with_question(task_id, primary_symbol, question)
 
     result["question"] = question
     result["mode"] = "qa"
+    _update(task_id, 100, "分析完成", "五层分析 + 问题回答已完成")
+    return result
+
+
+def _quick_non_invest_reject(task_id: str, question: str) -> dict[str, Any]:
+    """Quick reject for clearly non-investment questions via single LLM call."""
+    ok, text = _call_llm(
+        system_prompt="判断用户问题是否与投资、金融、宏观经济相关。如果完全无关，回答NO；如果有任何关系，回答YES并用中文简短回答。",
+        user_prompt=f"用户问题：{question}\n\n如果与投研无关，只回NO。如果相关，回YES并简短回答。",
+        temperature=0.2,
+        max_tokens=600,
+    )
+    _update(task_id, 100, "完成", "")
+    answer = text.strip() if ok and text.strip() else "抱歉，我是投资研究助手，请提出投研相关问题。"
+    if answer.strip().upper() == "NO":
+        answer = "抱歉，我是投资研究助手，只能回答与投资、金融市场、宏观经济相关的问题。请提出投研相关问题。"
+    return {
+        "symbol": None, "analyzed_at": _now_iso(), "mode": "qa", "question": question, "answer": answer,
+        "fundamental": _fundamental_fallback(), "technical": _technical_fallback(),
+        "sentiment": _sentiment_fallback(), "bull": _bull_fallback(), "bear": _bear_fallback(),
+        "judge": {**_judge_fallback(), "核心理由": answer},
+        "warnings": [],
+    }
+
+
+def _run_analysis_with_question(task_id: str, symbol: str | None, question: str) -> dict[str, Any]:
+    """Run 5-layer analysis, injecting user question as context for the judge."""
+    symbol_display = symbol or "全市场"
+
+    # Gather data
+    _update(task_id, 15, "采集数据", f"拉取{symbol_display}的基本面/技术面/情绪面数据")
+    fundamental_data = _gather_fundamental_data(symbol)
+    technical_data = _gather_technical_data(symbol)
+    sentiment_data = _gather_sentiment_data(symbol)
+    all_warnings = fundamental_data.get("warnings", []) + technical_data.get("warnings", []) + sentiment_data.get("warnings", [])
+
+    # Layers 1-3
+    _update(task_id, 25, "基本面分析", "")
+    fundamental = _run_fundamental_agent(symbol_display, fundamental_data)
+    _update(task_id, 40, "技术面分析", "")
+    technical = _run_technical_agent(symbol_display, technical_data)
+    _update(task_id, 55, "情绪面分析", "")
+    sentiment = _run_sentiment_agent(symbol_display, sentiment_data)
+
+    # Layer 4: Debate
+    _update(task_id, 70, "多空辩论", "")
+    bull, bear = _run_debate_agents(symbol_display, fundamental, technical, sentiment)
+
+    # Layer 5: Judge — inject question as context
+    _update(task_id, 85, "法官裁决", "结合用户问题给出裁决")
+    judge = _run_judge_agent_with_question(symbol_display, fundamental, technical, sentiment, bull, bear, question)
+
+    result: dict[str, Any] = {
+        "symbol": symbol,
+        "analyzed_at": _now_iso(),
+        "fundamental": fundamental, "technical": technical, "sentiment": sentiment,
+        "bull": bull, "bear": bear, "judge": judge,
+        "warnings": all_warnings,
+    }
+    return result
+
+
+def _run_judge_agent_with_question(
+    symbol_display: str, fundamental: dict, technical: dict, sentiment: dict,
+    bull: dict, bear: dict, question: str,
+) -> dict:
+    """Judge agent that also answers the user's question."""
+    ok, text = _call_llm(
+        system_prompt="你是 ArbiterX 投研裁判。先回答用户问题，再基于五层分析数据给出裁决。规则：不编造数据、不承诺收益、不绝对化判断。",
+        user_prompt=f"""研究标的：{symbol_display} | 用户提问：{question}
+
+多空论据：
+看多：{json.dumps(bull, ensure_ascii=False, indent=2)}
+看空：{json.dumps(bear, ensure_ascii=False, indent=2)}
+基本面评级：{fundamental.get('评级','?')} | 技术面评级：{technical.get('评级','?')} | 情绪：{sentiment.get('整体情绪','?')}
+
+输出JSON：
+{{
+  "答复用户": "结合数据回答用户问题，200-400字",
+  "裁决": "看多|看空|中性观望",
+  "裁决强度": "强烈|适度|谨慎",
+  "核心理由": "裁决理由，2-3句话",
+  "胜出论据": [{{"来源":"看多|看空","论点":"..."}}],
+  "操作建议": {{"短期（1-4周）":"...","中期（1-3月）":"...","风险控制":"..."}},
+  "免责声明": "本分析仅供参考，不构成投资建议。"
+}}
+只输出JSON。""",
+        temperature=0.25,
+        max_tokens=1000,
+    )
+    if not ok:
+        return {**_judge_fallback(), "核心理由": "数据获取失败，请重试"}
+    result = _parse_json_strict(text, _judge_fallback())
+    if "答复用户" not in result:
+        result["答复用户"] = result.get("核心理由", "")
     return result
 
 
