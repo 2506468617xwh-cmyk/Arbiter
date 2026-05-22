@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function ResearchChatPanel({
-  title = "RAbot 研究对话",
+  title = "ArbiterX 研究对话",
   scope,
   assetSymbol = null,
   symbols = [],

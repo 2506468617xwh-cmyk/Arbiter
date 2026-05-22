@@ -34,7 +34,7 @@ export default function NewsPage() {
   const loadIntelligence = useCallback(async () => {
     if (intelLoaded) return;
     setIntelLoading(true);
-    try { setIntel(await fetchNewsIntelligence(true)); } catch {}
+    try { setIntel(await fetchNewsIntelligence(false)); } catch {}
     finally { setIntelLoading(false); setIntelLoaded(true); }
   }, [intelLoaded]);
 

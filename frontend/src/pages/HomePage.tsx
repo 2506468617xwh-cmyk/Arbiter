@@ -59,7 +59,7 @@ export default function HomePage({ onNavigate, onOpenSettings }: HomePageProps) 
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-gradient)] flex items-center justify-center shadow-lg shadow-[var(--accent)]/20">
               <span className="text-sm font-bold text-white">R</span>
             </div>
-            <span className="text-base font-bold gradient-text tracking-tight">RAbot</span>
+            <span className="text-base font-bold gradient-text tracking-tight">ArbiterX</span>
             <button
               className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-card)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink-primary)] active:scale-90 transition-all"
               onClick={() => onOpenSettings?.()}

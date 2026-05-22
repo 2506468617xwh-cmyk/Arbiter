@@ -104,7 +104,7 @@ function AssetResearchPage({ useLlm }: { useLlm: boolean }) {
         <MetricCard label="趋势" value={textValue(data?.market?.trend_signal)} detail={textValue(data?.market?.risk_level)} />
         <MetricCard label="最新日期" value={data?.latest_date ?? "--"} detail="本地行情最新记录" />
       </div>
-      <SectionCard title="RAbot 研究结论" warnings={data?.warnings}>
+      <SectionCard title="ArbiterX 研究结论" warnings={data?.warnings}>
         {textValue(tech.summary)}
       </SectionCard>
       <LineChart points={data?.series ?? []} symbols={[data?.symbol ?? symbol]} valueKey="close" />

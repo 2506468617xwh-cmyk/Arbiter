@@ -35,7 +35,9 @@ export default function MarketOverview({ region }: MarketOverviewProps) {
       if (!resp.items?.length) return;
 
       const symbols = resp.items.map((i) => i.symbol);
-      const tsResp = await fetchMarketTimeseries(symbols, false);
+      // Only fetch last 60 days for sparklines — avoid full history scan
+      const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+      const tsResp = await fetchMarketTimeseries(symbols, false, sixtyDaysAgo);
 
       const sparklineMap: Record<string, { date: string; close: number | null }[]> = {};
       if (tsResp.items) {

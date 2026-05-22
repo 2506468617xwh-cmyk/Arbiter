@@ -7,7 +7,7 @@ export default function AISummary() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    generateQuickSummary({ scope: "market", use_llm: true })
+    generateQuickSummary({ scope: "market", use_llm: false })
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
