@@ -743,55 +743,128 @@ def create_institute_task(symbol: str | None) -> TaskResponse:
 # ── Q&A Mode ──
 
 
+# ── Asset detection from free-text ──
+
+_ASSET_KEYWORD_MAP = {
+    "NASDAQ": ["纳斯达克", "nasdaq", "纳指", "科技股"],
+    "NASDAQ100": ["纳指100", "nasdaq100", "ndx"],
+    "SP500": ["标普500", "s&p500", "sp500", "标普", "美股大盘"],
+    "DOW": ["道琼斯", "dow", "道指"],
+    "CSI300": ["沪深300", "csi300"],
+    "SSE": ["上证指数", "上证", "沪指", "sse"],
+    "HSI": ["恒生指数", "恒指", "恒生", "hsi", "港股大盘"],
+    "GOLD": ["黄金", "gold", "贵金属"],
+    "WTI": ["原油", "石油", "wti", "oil"],
+    "DXY": ["美元指数", "美元", "dxy"],
+    "VIX": ["恐慌指数", "vix", "波动率"],
+    "NIKKEI225": ["日经", "日经225", "nikkei"],
+    "CHINEXT": ["创业板", "chinext"],
+    "STAR50": ["科创50", "科创", "star50"],
+    "CSI500": ["中证500", "csi500"],
+    "CSI1000": ["中证1000", "csi1000"],
+    "DAX": ["德国dax", "dax"],
+    "FTSE100": ["富时100", "ftse", "英国"],
+    "RUSSELL2000": ["罗素2000", "russell"],
+}
+
+_STOCK_CODE_PATTERN = r'\b([A-Za-z0-9]{1,10}\.(SH|SZ|US|HK|OF))\b'
+
+
+def _detect_symbols(text: str) -> list[str]:
+    """Extract known index symbols and stock codes from a free-text question."""
+    text_lower = text.lower()
+    found = set()
+    # Check stock code patterns first
+    import re
+    for match in re.finditer(_STOCK_CODE_PATTERN, text, re.IGNORECASE):
+        found.add(match.group(1).upper())
+    # Check keyword mappings
+    for symbol, keywords in _ASSET_KEYWORD_MAP.items():
+        for kw in keywords:
+            if kw in text_lower:
+                found.add(symbol)
+                break
+    return list(found)
+
+
 def run_institute_question(task_id: str, question: str) -> dict[str, Any]:
-    """Run an investment research Q&A with strict guardrails."""
+    """Run investment research Q&A — detects assets and runs full 5-layer analysis."""
     try:
-        task_manager.update_task(task_id, status="running", progress=0, current_step="初始化", message="正在分析问题", mark_started=True)
+        task_manager.update_task(task_id, status="running", progress=0, current_step="初始化", message="解析问题中的资产…", mark_started=True)
     except Exception:
         pass
 
-    _update(task_id, 30, "正在调用研究模型", "分析中…")
+    # Detect symbols from the question
+    symbols = _detect_symbols(question)
+    primary_symbol = symbols[0] if symbols else None
 
-    ok, text = _call_llm(
-        system_prompt="""你是 ArbiterX 投资研究助手。你的职责是回答用户的投研相关问题。
+    if primary_symbol:
+        _update(task_id, 5, f"检测到资产：{primary_symbol}", f"为 {primary_symbol} 拉取数据并启动五层分析")
+        # Run the FULL 5-layer analysis with real data
+        result = run_institute_analysis(task_id, primary_symbol)
+        # Inject the user's question for the judge
+        if result.get("judge"):
+            result["judge"]["用户提问"] = question
+            result["question"] = question
+            result["mode"] = "qa_with_data"
+        return result
 
-你必须遵守以下规则：
-1. 只回答与投资、金融市场、宏观经济、股票、基金、ETF、债券、大宗商品、外汇、行业分析相关的问题
-2. 如果用户提出的问题与投资研究完全无关（如写代码、看病、做菜、娱乐等），礼貌拒绝并说明你只回答投研相关问题
-3. 不给出具体买卖建议，不承诺收益，不使用"必涨""必跌"等绝对化判断
-4. 回答基于公开信息和通用金融知识，明确说明不确定性
-5. 回答风格简洁专业，中文输出，200-600字为宜""",
-        user_prompt=f"用户问题：{question}\n\n请基于你的投研知识回答。如果问题与投研无关，请礼貌拒绝。",
-        temperature=0.3,
-        max_tokens=900,
+    # Fallback: no specific asset detected — do market-level analysis
+    _update(task_id, 5, "未检测到特定资产", "以全市场视角进行分析…")
+    result = run_institute_analysis(task_id, None)
+
+    # Add a Q&A wrapper with guardrails
+    _update(task_id, 82, "综合回答用户问题", "结合市场数据生成回答")
+
+    # Check if question is investment-related via LLM guardrail
+    ok_guard, guard_text = _call_llm(
+        system_prompt="判断用户问题是否与投资研究相关。只回答 YES 或 NO。",
+        user_prompt=f"用户问题：{question}\n\n这个问题与投资、金融、股票、基金、宏观经济学相关吗？只回答YES或NO。",
+        temperature=0,
+        max_tokens=5,
     )
+    if ok_guard and guard_text.strip().upper().startswith("N"):
+        result["judge"]["核心理由"] = "抱歉，我是投资研究助手，只能回答与投资、金融市场、宏观经济相关的问题。请提出投研相关问题。"
+        result["judge"]["裁决"] = "中性观望"
+        result["question"] = question
+        result["mode"] = "qa_guardrail"
+        return result
 
-    _update(task_id, 80, "整理回答", "完成分析")
+    # If investment-related, use the market data + LLM to answer the question
+    if result.get("judge"):
+        market_context = json.dumps({
+            "fundamental_rating": result.get("fundamental", {}).get("评级"),
+            "technical_rating": result.get("technical", {}).get("评级"),
+            "sentiment_overall": result.get("sentiment", {}).get("整体情绪"),
+            "bull_confidence": result.get("bull", {}).get("做多信心"),
+            "bear_confidence": result.get("bear", {}).get("做空信心"),
+            "judge_verdict": result.get("judge", {}).get("裁决"),
+            "judge_reason": result.get("judge", {}).get("核心理由", "")[:300],
+        }, ensure_ascii=False)
 
-    fallback_text = "抱歉，无法回答该问题。请尝试换个问法或检查网络连接。"
+        ok_qa, qa_text = _call_llm(
+            system_prompt="""你是 ArbiterX 投资研究助手。根据五层Agent分析系统的真实数据来回答用户问题。
 
-    result = {
-        "symbol": None,
-        "analyzed_at": _now_iso(),
-        "mode": "qa",
-        "question": question,
-        "answer": text if ok and text.strip() else fallback_text,
-        "fundamental": {"评级": "中性", "核心结论": "Q&A模式", "关键指标": [], "风险提示": ""},
-        "technical": {"评级": "中性", "核心结论": "Q&A模式", "关键信号": [], "关键价位": ""},
-        "sentiment": {"整体情绪": "中性", "散户情绪": "中性", "机构情绪": "中性", "情绪分歧": False, "核心结论": "Q&A模式", "主要风险标签": [], "情绪风险提示": ""},
-        "bull": {"立场": "看多", "论据": [], "做多信心": "低", "最大风险": "Q&A模式"},
-        "bear": {"立场": "看空", "论据": [], "做空信心": "低", "最大阻力": "Q&A模式"},
-        "judge": {
-            "裁决": "中性观望", "裁决强度": "谨慎",
-            "核心理由": text if ok and text.strip() else fallback_text,
-            "胜出论据": [], "被否定论据": [],
-            "操作建议": {"短期（1-4周）": "请参考回答内容", "中期（1-3月）": "请参考回答内容", "风险控制": "本回答不构成投资建议"},
-            "免责声明": "本分析仅供参考，不构成投资建议，市场有风险，投资需谨慎。"
-        },
-        "warnings": [] if ok else [text],
-    }
+规则：
+1. 以五层分析数据为依据回答，标注哪些来自数据分析、哪些是一般性知识
+2. 如果问题与投研完全无关，礼貌拒绝
+3. 不给出具体买卖建议，不承诺收益
+4. 中文回答，300-500字""",
+            user_prompt=f"""用户问题：{question}
 
-    _update(task_id, 100, "分析完成", "已回答")
+以下是 ArbiterX 五层分析系统基于真实市场数据生成的结论：
+{market_context}
+
+请基于以上数据回答用户问题。如果数据不足以回答，坦诚说明。""",
+            temperature=0.3,
+            max_tokens=900,
+        )
+
+        if ok_qa and qa_text.strip():
+            result["judge"]["核心理由"] = qa_text.strip()
+
+    result["question"] = question
+    result["mode"] = "qa"
     return result
 
 
