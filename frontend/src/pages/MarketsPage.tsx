@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, BarChart3, TrendingDown } from "lucide-react";
-import { fetchMarketDashboard, fetchMarketPerformance, MarketDashboardResponse, MarketPerformanceItem } from "../api/client";
+import { fetchMarketDashboard, MarketDashboardResponse, MarketPerformanceItem } from "../api/client";
 
 const StockAnalysisPage = lazy(() => import("./StockAnalysisPage"));
 const FundAnalysisPage = lazy(() => import("./FundAnalysisPage"));
@@ -25,8 +25,8 @@ function HeatmapView() {
 
   useEffect(() => {
     if (loaded) return;
-    Promise.all([fetchMarketDashboard(), fetchMarketPerformance()])
-      .then(([d, p]) => { setData(d); setItems(p.items); setLoaded(true); })
+    fetchMarketDashboard()
+      .then((d) => { setData(d); setItems(d.all_items || []); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, [loaded]);
 

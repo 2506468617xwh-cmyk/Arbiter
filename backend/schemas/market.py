@@ -54,6 +54,7 @@ class MarketDashboardResponse(BaseModel):
     weak_assets: list[MarketPerformanceItem] = Field(default_factory=list)
     high_volatility_assets: list[MarketPerformanceItem] = Field(default_factory=list)
     high_drawdown_assets: list[MarketPerformanceItem] = Field(default_factory=list)
+    all_items: list[MarketPerformanceItem] = Field(default_factory=list)
     summary: str
     last_update: str
     warnings: list[str] = Field(default_factory=list)

@@ -303,7 +303,9 @@ def get_market_indexes(limit: int = 50) -> MarketIndexResponse:
 
 
 def get_market_performance() -> MarketPerformanceResponse:
-    df, warnings = _read_index_daily()
+    # Only read last 2 years — don't scan the entire history
+    two_years_ago = (datetime.now() - pd.DateOffset(years=2)).strftime("%Y-%m-%d")
+    df, warnings = _read_index_daily(start=two_years_ago)
     items = _build_performance(df)
     if not items and not warnings:
         warnings.append("当前暂无可展示的市场表现数据。")
@@ -331,6 +333,7 @@ def get_market_dashboard() -> MarketDashboardResponse:
         weak_assets=weak,
         high_volatility_assets=high_vol,
         high_drawdown_assets=high_drawdown,
+        all_items=items,
         summary=summary,
         last_update=_local_now_iso(),
         warnings=perf.warnings,

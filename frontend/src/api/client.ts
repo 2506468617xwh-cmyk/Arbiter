@@ -204,6 +204,7 @@ export interface MarketDashboardResponse {
   weak_assets: MarketPerformanceItem[];
   high_volatility_assets: MarketPerformanceItem[];
   high_drawdown_assets: MarketPerformanceItem[];
+  all_items: MarketPerformanceItem[];
   summary: string;
   last_update: string;
   warnings: string[];
