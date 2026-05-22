@@ -487,7 +487,7 @@ function getApiBaseUrl(): string {
   }
   // Fallback for production – hardcoded Render backend
   if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return "https://arbiter-api-l9fd.onrender.com";
+    return "https://arbiterx.onrender.com";
   }
   return "";
 }
