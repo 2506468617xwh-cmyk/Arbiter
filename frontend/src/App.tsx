@@ -54,7 +54,7 @@ export default function App() {
   });
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = window.localStorage.getItem("rabot_theme");
-    return isTheme(saved) ? saved : "bloomberg";
+    return isTheme(saved) ? saved : "graphite";
   });
 
   // Track which tabs have been mounted (lazy mount once, keep alive)
