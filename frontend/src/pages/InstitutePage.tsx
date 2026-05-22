@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown, ChevronUp, Loader2, Gavel, TrendingUp, TrendingDown, BarChart3, Newspaper } from "lucide-react";
-import { startInstituteAnalysis, fetchInstituteResult, fetchTask, searchStocks } from "../api/client";
+import { startInstituteAnalysis, startInstituteQuestion, fetchInstituteResult, fetchTask, searchStocks } from "../api/client";
 import type { InstituteAnalysisResult } from "../api/client";
 import ProgressBar from "../components/ProgressBar";
 
@@ -400,6 +400,10 @@ export default function InstitutePage({ useLlm }: { useLlm: boolean }) {
     return () => window.clearTimeout(timer);
   }, [symbol]);
 
+  // Detect if input is a stock code or a free-text question
+  const isStockCode = (s: string): boolean =>
+    /^[A-Za-z0-9]{1,10}\.(SH|SZ|US|HK|OF)$/.test(s.trim());
+
   const startAnalysis = useCallback(async () => {
     setError(null);
     setResult(null);
@@ -407,8 +411,37 @@ export default function InstitutePage({ useLlm }: { useLlm: boolean }) {
     setStep("");
     setLoading(true);
 
+    const input = symbol.trim();
+    const s = isStockCode(input) ? input : null;
+    const question = !s && input ? input : null;
+
     try {
-      const s = symbol.trim() || null;
+      // If it's a text question, use Q&A endpoint
+      if (question) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        const qTask = await startInstituteQuestion(question);
+        pollRef.current = setInterval(async () => {
+          try {
+            const updated = await fetchTask(qTask.task_id);
+            setProgress(updated.progress || 0);
+            setStep(updated.current_step || "");
+            if (updated.status === "success") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              const fullResult = await fetchInstituteResult(qTask.task_id);
+              if (fullResult.status === "success" && fullResult.result) {
+                setResult(fullResult.result as unknown as InstituteAnalysisResult);
+              }
+              setLoading(false);
+            } else if (updated.status === "failed") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              setError(updated.error || "分析任务失败");
+              setLoading(false);
+            }
+          } catch {}
+        }, 1500);
+        return;
+      }
+
       const task = await startInstituteAnalysis(s);
       setTaskId(task.task_id);
       setProgress(task.progress || 0);
@@ -476,10 +509,10 @@ export default function InstitutePage({ useLlm }: { useLlm: boolean }) {
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-dim)]" />
                 <input
-                  className="w-full h-11 pl-9 pr-3 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] text-sm text-[var(--ink-primary)] font-mono uppercase placeholder:text-[var(--ink-dim)] outline-none focus:border-[var(--accent)]/40 focus:ring-1 focus:ring-[var(--accent)]/20 transition-all"
+                  className="w-full h-11 pl-9 pr-3 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] text-sm text-[var(--ink-primary)] placeholder:text-[var(--ink-dim)] outline-none focus:border-[var(--accent)]/40 focus:ring-1 focus:ring-[var(--accent)]/20 transition-all"
                   value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="600519.SH / TSLA.US / QQQ.US / 700.HK · 留空=全市场分析"
+                  onChange={(e) => setSymbol(e.target.value)}
+                  placeholder="输入代码开始研究，或直接提问投研问题…"
                 />
               </div>
               <button
@@ -577,10 +610,10 @@ export default function InstitutePage({ useLlm }: { useLlm: boolean }) {
           <div className="pt-8 text-center space-y-3">
             <div className="text-4xl">🔬</div>
             <p className="text-[13px] text-[var(--ink-muted)]">
-              输入股票/ETF/基金代码开始五层AI分析
+              输入代码开始研究，或直接提问投研问题
             </p>
             <p className="text-[11px] text-[var(--ink-dim)]">
-              基本面 → 技术面 → 情绪面 → 多空辩论 → 法官裁决
+              代码示例：TSLA.US / 600519.SH · 提问示例：纳斯达克还会涨吗？
             </p>
           </div>
         )}

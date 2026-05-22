@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Settings } from "lucide-react";
+import { Settings, RefreshCw } from "lucide-react";
 import MarketOverview from "../components/MarketOverview";
 import AISummary from "../components/AISummary";
 import HotSectors from "../components/HotSectors";
@@ -29,6 +29,7 @@ function SectionLabel({ children, live }: { children: React.ReactNode; live?: bo
 export default function HomePage({ onNavigate, onOpenSettings }: HomePageProps) {
   const [region, setRegion] = useState<RegionKey>("CN");
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOverview()
@@ -43,6 +44,29 @@ export default function HomePage({ onNavigate, onOpenSettings }: HomePageProps) 
         }
       })
       .catch(() => {});
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetch("/api/system/update/run", { method: "POST" });
+    } catch {}
+    // Wait a few seconds for backend to process, then reload overview
+    setTimeout(async () => {
+      try {
+        const r = await fetchOverview();
+        if (r.last_update) {
+          setLastUpdate(new Date(r.last_update).toLocaleString("zh-CN", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }));
+        }
+      } catch {}
+      setRefreshing(false);
+      window.location.reload();
+    }, 8000);
   }, []);
 
   return (
@@ -65,6 +89,14 @@ export default function HomePage({ onNavigate, onOpenSettings }: HomePageProps) 
               onClick={() => onOpenSettings?.()}
             >
               <Settings size={13} />
+            </button>
+            <button
+              disabled={refreshing}
+              className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-card)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--accent)] active:scale-90 transition-all disabled:opacity-40"
+              onClick={handleRefresh}
+              title="刷新数据"
+            >
+              <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
             </button>
           </div>
 

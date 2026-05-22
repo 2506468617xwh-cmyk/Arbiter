@@ -738,3 +738,68 @@ def create_institute_task(symbol: str | None) -> TaskResponse:
     )
     task_manager.run_task_in_background(task.task_id, run_institute_analysis, symbol)
     return task
+
+
+# ── Q&A Mode ──
+
+
+def run_institute_question(task_id: str, question: str) -> dict[str, Any]:
+    """Run an investment research Q&A with strict guardrails."""
+    try:
+        task_manager.update_task(task_id, status="running", progress=0, current_step="初始化", message="正在分析问题", mark_started=True)
+    except Exception:
+        pass
+
+    _update(task_id, 30, "正在调用研究模型", "分析中…")
+
+    ok, text = _call_llm(
+        system_prompt="""你是 ArbiterX 投资研究助手。你的职责是回答用户的投研相关问题。
+
+你必须遵守以下规则：
+1. 只回答与投资、金融市场、宏观经济、股票、基金、ETF、债券、大宗商品、外汇、行业分析相关的问题
+2. 如果用户提出的问题与投资研究完全无关（如写代码、看病、做菜、娱乐等），礼貌拒绝并说明你只回答投研相关问题
+3. 不给出具体买卖建议，不承诺收益，不使用"必涨""必跌"等绝对化判断
+4. 回答基于公开信息和通用金融知识，明确说明不确定性
+5. 回答风格简洁专业，中文输出，200-600字为宜""",
+        user_prompt=f"用户问题：{question}\n\n请基于你的投研知识回答。如果问题与投研无关，请礼貌拒绝。",
+        temperature=0.3,
+        max_tokens=900,
+    )
+
+    _update(task_id, 80, "整理回答", "完成分析")
+
+    fallback_text = "抱歉，无法回答该问题。请尝试换个问法或检查网络连接。"
+
+    result = {
+        "symbol": None,
+        "analyzed_at": _now_iso(),
+        "mode": "qa",
+        "question": question,
+        "answer": text if ok and text.strip() else fallback_text,
+        "fundamental": {"评级": "中性", "核心结论": "Q&A模式", "关键指标": [], "风险提示": ""},
+        "technical": {"评级": "中性", "核心结论": "Q&A模式", "关键信号": [], "关键价位": ""},
+        "sentiment": {"整体情绪": "中性", "散户情绪": "中性", "机构情绪": "中性", "情绪分歧": False, "核心结论": "Q&A模式", "主要风险标签": [], "情绪风险提示": ""},
+        "bull": {"立场": "看多", "论据": [], "做多信心": "低", "最大风险": "Q&A模式"},
+        "bear": {"立场": "看空", "论据": [], "做空信心": "低", "最大阻力": "Q&A模式"},
+        "judge": {
+            "裁决": "中性观望", "裁决强度": "谨慎",
+            "核心理由": text if ok and text.strip() else fallback_text,
+            "胜出论据": [], "被否定论据": [],
+            "操作建议": {"短期（1-4周）": "请参考回答内容", "中期（1-3月）": "请参考回答内容", "风险控制": "本回答不构成投资建议"},
+            "免责声明": "本分析仅供参考，不构成投资建议，市场有风险，投资需谨慎。"
+        },
+        "warnings": [] if ok else [text],
+    }
+
+    _update(task_id, 100, "分析完成", "已回答")
+    return result
+
+
+def create_institute_question_task(question: str) -> TaskResponse:
+    """Create an async Q&A task."""
+    task = task_manager.create_task(
+        task_type="institute_question",
+        message=f"投研问答：{question[:50]}",
+    )
+    task_manager.run_task_in_background(task.task_id, run_institute_question, question)
+    return task

@@ -795,6 +795,10 @@ export async function startInstituteAnalysis(symbol: string | null): Promise<Tas
   return requestJsonPost<TaskResponse>("/api/institute/analyze", { symbol });
 }
 
+export async function startInstituteQuestion(question: string): Promise<TaskResponse> {
+  return requestJsonPost<TaskResponse>("/api/institute/question", { question });
+}
+
 export function fetchInstituteResult(taskId: string): Promise<TaskResultResponse> {
   return requestJson<TaskResultResponse>(`/api/institute/result/${encodeURIComponent(taskId)}`);
 }
